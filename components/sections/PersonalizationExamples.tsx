@@ -29,12 +29,14 @@ export function PersonalizationExamples() {
               >
                 <div
                   className={`border-b border-line p-6 ${
-                    isBlue ? "bg-blueElectric/[0.08]" : "bg-coral/10"
+                    isBlue
+                      ? "bg-gradient-to-br from-cyanGlow/20 to-white"
+                      : "bg-gradient-to-br from-amberSignal/20 to-white"
                   }`}
                 >
                   <p
                     className={`text-sm font-semibold ${
-                      isBlue ? "text-blueCore" : "text-coral"
+                      isBlue ? "text-blueCore" : "text-[#9a6400]"
                     }`}
                   >
                     {example.course}
@@ -52,7 +54,7 @@ export function PersonalizationExamples() {
                           <CheckCircle2
                             aria-hidden
                             className={`mt-0.5 size-4 shrink-0 ${
-                              isBlue ? "text-blueElectric" : "text-coral"
+                              isBlue ? "text-blueElectric" : "text-[#9a6400]"
                             }`}
                           />
                           <span>{item}</span>

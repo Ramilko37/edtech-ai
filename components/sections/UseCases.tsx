@@ -17,9 +17,9 @@ export function UseCases() {
           {useCases.map(({ title, icon: Icon }) => (
             <div
               key={title}
-              className="flex items-center gap-4 rounded-lg border border-line bg-white p-5 transition duration-200 hover:border-blueElectric/40 hover:shadow-panel"
+              className="flex items-center gap-4 rounded-lg border border-line bg-white p-5 transition duration-200 hover:-translate-y-1 hover:border-blueElectric/40 hover:shadow-panel"
             >
-              <div className="grid size-11 shrink-0 place-items-center rounded-lg bg-greenSoft/10 text-greenSoft">
+              <div className="grid size-11 shrink-0 place-items-center rounded-lg bg-greenSoft/12 text-greenSoft">
                 <Icon aria-hidden className="size-5" />
               </div>
               <h3 className="text-base font-semibold leading-6 text-ink">{title}</h3>
