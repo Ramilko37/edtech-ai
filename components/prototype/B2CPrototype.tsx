@@ -62,15 +62,15 @@ const themeVars: Record<PrototypeTheme, ThemeVars> = {
     "--glass": "rgba(16,18,32,0.72)",
     "--glass-border": "rgba(150,160,220,0.2)",
     "--pill": "rgba(255,255,255,0.03)",
-    "--panel": "rgba(14,16,28,0.5)",
+    "--panel": "#0e101c",
     "--panel-border": "rgba(150,160,220,0.14)",
-    "--chip-bg": "rgba(255,255,255,0.035)",
-    "--node-rest-bg": "rgba(255,255,255,0.04)",
+    "--chip-bg": "#141626",
+    "--node-rest-bg": "#111321",
     "--node-rest-border": "rgba(150,160,220,0.25)",
     "--line": "linear-gradient(180deg,rgba(150,160,220,0.3),rgba(150,160,220,0.04))",
     "--badge-bg": "rgba(139,107,255,0.16)",
     "--badge-border": "rgba(139,107,255,0.3)",
-    "--lesson-grad": "linear-gradient(180deg, rgba(34,28,62,0.6), rgba(16,16,30,0.55))",
+    "--lesson-grad": "linear-gradient(180deg, #18162a, #0d0e1a)",
     "--lesson-border": "rgba(139,120,255,0.28)",
     "--course-bg": "radial-gradient(110% 80% at 50% -5%, rgba(28,24,54,0.62), rgba(6,7,15,0.93))",
     "--vignette": "radial-gradient(125% 95% at 50% 44%, rgba(6,7,15,0) 32%, rgba(6,7,15,0.55) 100%)",
@@ -95,15 +95,15 @@ const themeVars: Record<PrototypeTheme, ThemeVars> = {
     "--glass": "rgba(255,255,255,0.62)",
     "--glass-border": "rgba(255,255,255,0.85)",
     "--pill": "rgba(255,255,255,0.55)",
-    "--panel": "rgba(255,255,255,0.52)",
+    "--panel": "#ffffff",
     "--panel-border": "rgba(255,255,255,0.8)",
-    "--chip-bg": "rgba(255,255,255,0.5)",
-    "--node-rest-bg": "rgba(255,255,255,0.9)",
+    "--chip-bg": "#ffffff",
+    "--node-rest-bg": "#ffffff",
     "--node-rest-border": "rgba(255,255,255,0.9)",
     "--line": "linear-gradient(180deg,rgba(106,116,180,0.4),rgba(106,116,180,0.08))",
     "--badge-bg": "rgba(106,80,220,0.12)",
     "--badge-border": "rgba(106,80,220,0.3)",
-    "--lesson-grad": "linear-gradient(180deg, rgba(255,255,255,0.7), rgba(244,245,255,0.48))",
+    "--lesson-grad": "linear-gradient(180deg, #ffffff, #f4f5ff)",
     "--lesson-border": "rgba(255,255,255,0.85)",
     "--course-bg": "radial-gradient(58% 48% at 24% 4%, rgba(140,118,255,0.28), transparent 62%), radial-gradient(52% 46% at 92% 22%, rgba(110,128,255,0.18), transparent 60%), radial-gradient(62% 56% at 82% 96%, rgba(94,214,230,0.2), transparent 60%), linear-gradient(180deg, #edeffb 0%, #e6e8f6 100%)",
     "--vignette": "radial-gradient(125% 95% at 50% 44%, rgba(238,240,250,0) 38%, rgba(228,231,246,0.45) 100%)",
@@ -147,6 +147,27 @@ function hexA(hex: string, alpha: number) {
   const n = parseInt(hex.slice(1), 16);
 
   return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${alpha})`;
+}
+
+function quietZoneFactor(x: number, y: number, width: number, height: number, phase: PrototypePhase) {
+  if (phase !== "idle") {
+    return 1;
+  }
+
+  const isNarrow = width < 600;
+  const cx = width / 2;
+  const cy = isNarrow ? height * 0.42 : height * 0.48;
+  const rx = isNarrow ? width * 0.95 : Math.max(220, Math.min(width * 0.48, 500));
+  const ry = isNarrow ? height * 0.38 : Math.max(260, Math.min(height * 0.44, 360));
+  const dx = (x - cx) / rx;
+  const dy = (y - cy) / ry;
+  const distance = dx * dx + dy * dy;
+
+  if (distance >= 1.2) {
+    return 1;
+  }
+
+  return Math.max(isNarrow ? 0.02 : 0.05, Math.min(1, distance * (isNarrow ? 0.35 : 0.75)));
 }
 
 function buildClusters(): BuiltCluster[] {
@@ -295,7 +316,9 @@ export function B2CPrototype() {
       let bx = 0;
       let by = 0;
 
-      if (phaseRef.current === "idle") {
+      const currentPhase = phaseRef.current;
+
+      if (currentPhase === "idle") {
         bx = Math.sin(t * 0.0004) * 8;
         by = Math.cos(t * 0.00033) * 6;
       }
@@ -318,9 +341,10 @@ export function B2CPrototype() {
         if (star.x > 1) star.x -= 1;
         if (star.x < 0) star.x += 1;
 
-        const alpha = (0.25 + (Math.sin(t * star.sp + star.ph) * 0.5 + 0.5) * 0.5) * pal.starA;
         const sx = star.x * w - bx * 0.25;
         const sy = star.y * h - by * 0.25;
+        const quiet = quietZoneFactor(sx, sy, w, h, currentPhase);
+        const alpha = (0.25 + (Math.sin(t * star.sp + star.ph) * 0.5 + 0.5) * 0.5) * pal.starA * quiet;
 
         ctx.globalAlpha = alpha;
         ctx.fillStyle = `rgb(${pal.star})`;
@@ -368,33 +392,36 @@ export function B2CPrototype() {
         });
 
         ctx.lineWidth = Math.max(0.6, 0.85 * camera.scale);
-        ctx.strokeStyle = hexA(color, alpha * 0.4);
-        ctx.beginPath();
 
         for (const [from, to] of cluster.links) {
           const p = toScreen(positions[from].x, positions[from].y, bx, by);
           const q = toScreen(positions[to].x, positions[to].y, bx, by);
+          const quiet = quietZoneFactor((p.x + q.x) / 2, (p.y + q.y) / 2, w, h, currentPhase);
+
+          ctx.strokeStyle = hexA(color, alpha * 0.4 * quiet);
+          ctx.beginPath();
           ctx.moveTo(p.x, p.y);
           ctx.lineTo(q.x, q.y);
+          ctx.stroke();
         }
-
-        ctx.stroke();
 
         const baseR = isActive ? 6 : 4;
         for (let i = 0; i < positions.length; i += 1) {
           const p = toScreen(positions[i].x, positions[i].y, bx, by);
           const r = baseR * camera.scale;
+          const quiet = quietZoneFactor(p.x, p.y, w, h, currentPhase);
+          const nodeAlpha = alpha * quiet;
 
           ctx.save();
-          ctx.globalAlpha = alpha;
+          ctx.globalAlpha = nodeAlpha;
           ctx.shadowColor = color;
-          ctx.shadowBlur = (isActive ? 22 : 12) * Math.min(1, camera.scale);
+          ctx.shadowBlur = (isActive ? 22 : 12) * Math.min(1, camera.scale) * quiet;
           ctx.fillStyle = color;
           ctx.beginPath();
           ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
           ctx.fill();
           ctx.shadowBlur = 0;
-          ctx.globalAlpha = alpha * 0.9;
+          ctx.globalAlpha = nodeAlpha * 0.9;
           ctx.fillStyle = pal.core;
           ctx.beginPath();
           ctx.arc(p.x, p.y, r * 0.38, 0, Math.PI * 2);
@@ -403,7 +430,7 @@ export function B2CPrototype() {
 
           if (isLocked && assemble > 0.55) {
             ctx.save();
-            ctx.globalAlpha = Math.min(1, (assemble - 0.55) / 0.3);
+            ctx.globalAlpha = Math.min(1, (assemble - 0.55) / 0.3) * quiet;
             ctx.fillStyle = pal.num;
             ctx.font = `600 ${12 * Math.min(1.4, camera.scale)}px Manrope, sans-serif`;
             ctx.textAlign = "center";
@@ -414,7 +441,7 @@ export function B2CPrototype() {
 
           if (isActive && assemble < 0.32 && cluster.cfg.tags?.[i]) {
             ctx.save();
-            ctx.globalAlpha = ((0.32 - assemble) / 0.32) * 0.95 * alpha;
+            ctx.globalAlpha = ((0.32 - assemble) / 0.32) * 0.95 * alpha * quiet;
             ctx.fillStyle = pal.tag;
             ctx.font = "500 12px Manrope, sans-serif";
             ctx.textAlign = "left";
@@ -426,8 +453,9 @@ export function B2CPrototype() {
 
         if (!isLocked || assemble < 0.2) {
           const c = toScreen(cluster.cfg.cx, cluster.cfg.cy - 78, bx, by);
+          const quiet = quietZoneFactor(c.x, c.y, w, h, currentPhase);
           ctx.save();
-          ctx.globalAlpha = alpha * (isActive ? 0.95 : 0.6);
+          ctx.globalAlpha = alpha * (isActive ? 0.95 : 0.6) * quiet;
           ctx.fillStyle = isActive ? pal.labelOn : pal.labelOff;
           ctx.font = `${isActive ? "600" : "500"} ${isActive ? 14 : 12.5}px Manrope, sans-serif`;
           ctx.textAlign = "center";
@@ -568,7 +596,8 @@ export function B2CPrototype() {
               <button
                 type="button"
                 onClick={() => submit()}
-                className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-[13px] bg-[var(--accent-grad)] px-4 py-3 text-sm font-semibold text-white shadow-[0_10px_26px_-10px_rgba(120,100,255,0.75)] transition hover:-translate-y-0.5 hover:brightness-110 sm:px-5"
+                className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-[13px] px-4 py-3 text-sm font-semibold text-white shadow-[0_10px_26px_-10px_rgba(120,100,255,0.75)] transition hover:-translate-y-0.5 hover:brightness-110 sm:px-5"
+                style={{ background: "var(--accent-grad)" }}
               >
                 <span className="hidden sm:inline">Собрать мой курс</span>
                 <Send aria-hidden className="size-4" />
@@ -612,7 +641,10 @@ export function B2CPrototype() {
       ) : null}
 
       {phase === "course" ? (
-        <section className="absolute inset-0 z-10 overflow-y-auto bg-[var(--course-bg)] px-4 py-20 sm:px-6 lg:px-8">
+        <section
+          className="absolute inset-0 z-10 overflow-y-auto px-4 py-20 sm:px-6 lg:px-8"
+          style={{ background: "var(--course-bg)" }}
+        >
           <div className="mx-auto grid min-h-[calc(100svh-10rem)] w-full max-w-6xl items-center gap-6 lg:grid-cols-[0.84fr_1.16fr]">
             <aside className="prototype-fade rounded-[22px] border border-[var(--panel-border)] bg-[var(--panel)] p-5 shadow-[var(--panel-shadow)] backdrop-blur-xl sm:p-6">
               <div className="flex items-center justify-between gap-4">
@@ -664,7 +696,10 @@ export function B2CPrototype() {
             </aside>
 
             <div className="prototype-fade space-y-4">
-              <div className="rounded-[24px] border border-[var(--lesson-border)] bg-[var(--lesson-grad)] p-5 shadow-[var(--lesson-shadow)] backdrop-blur-xl sm:p-6">
+              <div
+                className="rounded-[24px] border border-[var(--lesson-border)] p-5 shadow-[var(--lesson-shadow)] backdrop-blur-xl sm:p-6"
+                style={{ background: "var(--lesson-grad)" }}
+              >
                 <p className="text-sm font-semibold text-[var(--text-2)]">7-дневная траектория</p>
                 <h2 className="mt-2 text-3xl font-semibold leading-tight text-[var(--text)] sm:text-5xl">
                   {course.title}
