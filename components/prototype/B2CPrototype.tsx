@@ -28,6 +28,8 @@ import {
   toggleCourseDay,
   type CourseSession,
 } from "@/lib/course-session";
+import { LearnerOnboarding } from "./LearnerOnboarding";
+import { LEARNER_SNAPSHOT_KEY, parseLearnerSnapshot, type LearnerSnapshot } from "@/lib/learner-snapshot";
 
 type ThemeVars = CSSProperties & Record<`--${string}`, string>;
 
@@ -225,11 +227,11 @@ export function B2CPrototype() {
   const [phase, setPhase] = useState<PrototypePhase>("idle");
   const [query, setQuery] = useState("");
   const [goal, setGoal] = useState("");
-  const [context, setContext] = useState("");
   const [level, setLevel] = useState<LearnerLevel>("beginner");
   const [activeCourse, setActiveCourse] = useState<CourseKey>("ai");
   const [theme, setTheme] = useState<PrototypeTheme>("dark");
   const [session, setSession] = useState<CourseSession | null>(null);
+  const [learnerSnapshot, setLearnerSnapshot] = useState<LearnerSnapshot | null>(null);
   const [hasHydratedSession, setHasHydratedSession] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -270,11 +272,13 @@ export function B2CPrototype() {
 
   useEffect(() => {
     const restoredSession = parseCourseSession(window.sessionStorage.getItem(COURSE_SESSION_KEY));
+    const restoredSnapshot = parseLearnerSnapshot(window.sessionStorage.getItem(LEARNER_SNAPSHOT_KEY));
 
     if (restoredSession) {
       setSession(restoredSession);
       setPhase("course");
     }
+    if (restoredSnapshot) setLearnerSnapshot(restoredSnapshot);
 
     setHasHydratedSession(true);
   }, []);
@@ -294,6 +298,11 @@ export function B2CPrototype() {
       // The prototype remains usable when browser storage is unavailable.
     }
   }, [hasHydratedSession, session]);
+
+  useEffect(() => {
+    if (!hasHydratedSession) return;
+    if (learnerSnapshot) window.sessionStorage.setItem(LEARNER_SNAPSHOT_KEY, JSON.stringify(learnerSnapshot));
+  }, [hasHydratedSession, learnerSnapshot]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -528,7 +537,7 @@ export function B2CPrototype() {
   const submit = async (value = query) => {
     const topic = value.trim();
 
-    if (!topic || isGenerating) {
+    if (!topic || isGenerating || !learnerSnapshot) {
       return;
     }
 
@@ -557,9 +566,9 @@ export function B2CPrototype() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           topic,
-          ...(goal.trim() ? { goal: goal.trim() } : {}),
-          ...(context.trim() ? { context: context.trim() } : {}),
-          level,
+          ...(goal.trim() ? { courseGoal: goal.trim() } : {}),
+          topicFamiliarity: level,
+          learnerSnapshot,
         }),
       });
       const result = (await response.json()) as { course?: GeneratedCourse; error?: string };
@@ -597,7 +606,6 @@ export function B2CPrototype() {
     };
     setQuery("");
     setGoal("");
-    setContext("");
     setLevel("beginner");
     setSession(null);
     setGenerationError(null);
@@ -637,6 +645,10 @@ export function B2CPrototype() {
       setSession(toggleCourseDay(session, day));
     }
   };
+
+  if (hasHydratedSession && !learnerSnapshot) {
+    return <main className="min-h-[100svh] bg-[var(--page)]" style={themeVars[theme]}><LearnerOnboarding onComplete={setLearnerSnapshot} /></main>;
+  }
 
   const activeCluster = constellationConfigs.find((item) => item.id === activeCourse);
   const activeColor = activeCluster?.color ?? "#8B6BFF";
@@ -714,15 +726,6 @@ export function B2CPrototype() {
                   value={goal}
                   onChange={(event) => setGoal(event.target.value)}
                   placeholder="Например, применять в работе"
-                  className="mt-1 block w-full bg-transparent text-sm text-[var(--text)] outline-none placeholder:text-[var(--placeholder)]"
-                />
-              </label>
-              <label className="rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-xs text-[var(--text-2)] backdrop-blur-xl">
-                Контекст
-                <input
-                  value={context}
-                  onChange={(event) => setContext(event.target.value)}
-                  placeholder="Профессия или интерес"
                   className="mt-1 block w-full bg-transparent text-sm text-[var(--text)] outline-none placeholder:text-[var(--placeholder)]"
                 />
               </label>
