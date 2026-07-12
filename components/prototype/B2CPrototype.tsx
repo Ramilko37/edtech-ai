@@ -13,8 +13,6 @@ import type { CSSProperties, KeyboardEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   constellationConfigs,
-  prototypeCourses,
-  prototypePassport,
   prototypeSuggestions,
   routeKey,
   type ConstellationConfig,
@@ -22,6 +20,14 @@ import {
   type PrototypePhase,
   type PrototypeTheme,
 } from "@/lib/prototype";
+import type { GeneratedCourse, LearnerLevel } from "@/lib/course";
+import {
+  COURSE_SESSION_KEY,
+  createCourseSession,
+  parseCourseSession,
+  toggleCourseDay,
+  type CourseSession,
+} from "@/lib/course-session";
 
 type ThemeVars = CSSProperties & Record<`--${string}`, string>;
 
@@ -218,8 +224,15 @@ function buildClusters(): BuiltCluster[] {
 export function B2CPrototype() {
   const [phase, setPhase] = useState<PrototypePhase>("idle");
   const [query, setQuery] = useState("");
+  const [goal, setGoal] = useState("");
+  const [context, setContext] = useState("");
+  const [level, setLevel] = useState<LearnerLevel>("beginner");
   const [activeCourse, setActiveCourse] = useState<CourseKey>("ai");
   const [theme, setTheme] = useState<PrototypeTheme>("dark");
+  const [session, setSession] = useState<CourseSession | null>(null);
+  const [hasHydratedSession, setHasHydratedSession] = useState(false);
+  const [generationError, setGenerationError] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number | null>(null);
@@ -237,15 +250,14 @@ export function B2CPrototype() {
   const cameraRef = useRef({ x: 790, y: 470, scale: 0.8 });
   const cameraTargetRef = useRef({ x: 790, y: 470, scale: 0.8 });
 
-  const course = prototypeCourses[activeCourse];
+  const course = session?.course;
   const modules = useMemo(
     () =>
-      course.modules.map((title, index) => ({
-        title,
-        day: `День ${index + 1}`,
-        n: index + 1,
+      (course?.days ?? []).map((module) => ({
+        ...module,
+        label: `День ${module.day}`,
       })),
-    [course.modules],
+    [course],
   );
 
   useEffect(() => {
@@ -255,6 +267,33 @@ export function B2CPrototype() {
   useEffect(() => {
     phaseRef.current = phase;
   }, [phase]);
+
+  useEffect(() => {
+    const restoredSession = parseCourseSession(window.sessionStorage.getItem(COURSE_SESSION_KEY));
+
+    if (restoredSession) {
+      setSession(restoredSession);
+      setPhase("course");
+    }
+
+    setHasHydratedSession(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hasHydratedSession) {
+      return;
+    }
+
+    try {
+      if (session) {
+        window.sessionStorage.setItem(COURSE_SESSION_KEY, JSON.stringify(session));
+      } else {
+        window.sessionStorage.removeItem(COURSE_SESSION_KEY);
+      }
+    } catch {
+      // The prototype remains usable when browser storage is unavailable.
+    }
+  }, [hasHydratedSession, session]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -486,10 +525,18 @@ export function B2CPrototype() {
     };
   }, []);
 
-  const submit = (value = query) => {
+  const submit = async (value = query) => {
+    const topic = value.trim();
+
+    if (!topic || isGenerating) {
+      return;
+    }
+
     const key = routeKey(value.trim()) ?? "ai";
     const cluster = clustersRef.current.find((item) => item.cfg.id === key);
 
+    setGenerationError(null);
+    setIsGenerating(true);
     hoverActiveRef.current = null;
     lockedIdRef.current = key;
     assembleTargetRef.current = 1;
@@ -504,13 +551,35 @@ export function B2CPrototype() {
       };
     }
 
-    if (transitionRef.current) {
-      clearTimeout(transitionRef.current);
-    }
+    try {
+      const response = await fetch("/api/generate-course", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          topic,
+          ...(goal.trim() ? { goal: goal.trim() } : {}),
+          ...(context.trim() ? { context: context.trim() } : {}),
+          level,
+        }),
+      });
+      const result = (await response.json()) as { course?: GeneratedCourse; error?: string };
 
-    transitionRef.current = setTimeout(() => {
+      if (!response.ok || !result.course) {
+        throw new Error(result.error ?? "Не удалось собрать карту. Попробуйте ещё раз.");
+      }
+
+      setSession(createCourseSession(result.course));
       setPhase("course");
-    }, 2600);
+    } catch (error) {
+      setGenerationError(
+        error instanceof Error ? error.message : "Не удалось собрать карту. Попробуйте ещё раз.",
+      );
+      lockedIdRef.current = null;
+      assembleTargetRef.current = 0;
+      setPhase("idle");
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const restart = () => {
@@ -527,24 +596,46 @@ export function B2CPrototype() {
       scale: homeScaleRef.current,
     };
     setQuery("");
+    setGoal("");
+    setContext("");
+    setLevel("beginner");
+    setSession(null);
+    setGenerationError(null);
     setPhase("idle");
   };
 
   const onInput = (value: string) => {
     setQuery(value);
+    setGenerationError(null);
     hoverActiveRef.current = routeKey(value);
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Enter") {
-      submit();
+      void submit();
     }
   };
 
   const pickSuggestion = (label: string) => {
     setQuery(label);
     hoverActiveRef.current = routeKey(label);
-    submit(label);
+    void submit(label);
+  };
+
+  const openCurrentCourse = () => {
+    if (!session) {
+      return;
+    }
+
+    lockedIdRef.current = activeCourse;
+    assembleTargetRef.current = 1;
+    setPhase("course");
+  };
+
+  const toggleDay = (day: number) => {
+    if (session) {
+      setSession(toggleCourseDay(session, day));
+    }
   };
 
   const activeCluster = constellationConfigs.find((item) => item.id === activeCourse);
@@ -568,6 +659,17 @@ export function B2CPrototype() {
         <ThemeIcon aria-hidden className="size-4" />
         {themeLabel}
       </button>
+
+      {session ? (
+        <button
+          type="button"
+          onClick={openCurrentCourse}
+          className="prototype-control absolute right-4 top-4 z-20 inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--glass-border)] bg-[var(--glass)] px-4 py-2 text-sm font-medium text-[var(--text-2)] backdrop-blur transition hover:border-[var(--accent)] hover:text-[var(--text)] sm:right-7 sm:top-6"
+        >
+          <CheckCircle2 aria-hidden className="size-4" />
+          Мой курс
+        </button>
+      ) : null}
 
       {phase === "idle" ? (
         <section className="prototype-fade pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center px-4 py-20 text-center sm:px-6">
@@ -595,14 +697,61 @@ export function B2CPrototype() {
               />
               <button
                 type="button"
-                onClick={() => submit()}
-                className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-[13px] px-4 py-3 text-sm font-semibold text-white shadow-[0_10px_26px_-10px_rgba(120,100,255,0.75)] transition hover:-translate-y-0.5 hover:brightness-110 sm:px-5"
+                onClick={() => void submit()}
+                disabled={isGenerating || !query.trim()}
+                className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-[13px] px-4 py-3 text-sm font-semibold text-white shadow-[0_10px_26px_-10px_rgba(120,100,255,0.75)] transition hover:-translate-y-0.5 hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 sm:px-5"
                 style={{ background: "var(--accent-grad)" }}
               >
                 <span className="hidden sm:inline">Собрать мой курс</span>
                 <Send aria-hidden className="size-4" />
               </button>
             </div>
+
+            <div className="mt-3 grid gap-2 text-left sm:grid-cols-3">
+              <label className="rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-xs text-[var(--text-2)] backdrop-blur-xl">
+                Цель
+                <input
+                  value={goal}
+                  onChange={(event) => setGoal(event.target.value)}
+                  placeholder="Например, применять в работе"
+                  className="mt-1 block w-full bg-transparent text-sm text-[var(--text)] outline-none placeholder:text-[var(--placeholder)]"
+                />
+              </label>
+              <label className="rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-xs text-[var(--text-2)] backdrop-blur-xl">
+                Контекст
+                <input
+                  value={context}
+                  onChange={(event) => setContext(event.target.value)}
+                  placeholder="Профессия или интерес"
+                  className="mt-1 block w-full bg-transparent text-sm text-[var(--text)] outline-none placeholder:text-[var(--placeholder)]"
+                />
+              </label>
+              <label className="rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-xs text-[var(--text-2)] backdrop-blur-xl">
+                Уровень
+                <select
+                  value={level}
+                  onChange={(event) => setLevel(event.target.value as LearnerLevel)}
+                  className="mt-1 block w-full bg-transparent text-sm text-[var(--text)] outline-none"
+                >
+                  <option value="beginner">С нуля</option>
+                  <option value="basic">Базовый</option>
+                  <option value="intermediate">Продолжающий</option>
+                </select>
+              </label>
+            </div>
+
+            {generationError ? (
+              <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-red-400/40 bg-red-500/10 px-3 py-2 text-left text-sm text-[var(--text)]" aria-live="polite">
+                <span>{generationError}</span>
+                <button
+                  type="button"
+                  onClick={() => void submit()}
+                  className="shrink-0 rounded-lg px-2 py-1 font-semibold text-[var(--accent-key)] transition hover:bg-[var(--accent-tint)]"
+                >
+                  Повторить
+                </button>
+              </div>
+            ) : null}
           </div>
 
           <div className="pointer-events-auto mt-5 flex max-w-3xl flex-wrap justify-center gap-2">
@@ -634,13 +783,13 @@ export function B2CPrototype() {
               Собираю личную траекторию
             </h2>
             <p className="mt-4 text-base leading-7 text-[var(--text-2)]">
-              Перестраиваю тему в маршрут: цель, уровень, контекст, примеры, первое задание и точку проверки.
+              Генерируем на бесплатной модели OpenRouter: цель, уровень, контекст, примеры, первое задание и точку проверки.
             </p>
           </div>
         </section>
       ) : null}
 
-      {phase === "course" ? (
+      {phase === "course" && course && session ? (
         <section
           className="absolute inset-0 z-10 overflow-y-auto px-4 py-20 sm:px-6 lg:px-8"
           style={{ background: "var(--course-bg)" }}
@@ -663,16 +812,16 @@ export function B2CPrototype() {
               </div>
 
               <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-                {prototypePassport.map((item, index) => (
+                {course.passport.map((item, index) => (
                   <div
-                    key={item.k}
+                    key={item.label}
                     className="prototype-chip rounded-2xl border border-[var(--panel-border)] bg-[var(--chip-bg)] p-4 shadow-[var(--chip-shadow)]"
                     style={{ animationDelay: `${index * 80}ms` }}
                   >
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--accent-key)]">
-                      {item.k}
+                      {item.label}
                     </p>
-                    <p className="mt-2 text-sm font-semibold text-[var(--text)]">{item.v}</p>
+                    <p className="mt-2 text-sm font-semibold text-[var(--text)]">{item.value}</p>
                   </div>
                 ))}
               </div>
@@ -682,7 +831,16 @@ export function B2CPrototype() {
                   <ArrowRight aria-hidden className="size-4" />
                   Почему такой маршрут
                 </p>
-                <p className="mt-3 text-sm leading-7 text-[var(--text-2)]">{course.why}</p>
+                <p className="mt-3 text-sm leading-7 text-[var(--text-2)]">{course.whyThisRoute}</p>
+              </div>
+
+              <div className="mt-4 rounded-2xl border border-[var(--panel-border)] bg-[var(--pill)] p-4">
+                <p className="text-sm font-semibold text-[var(--text)]">
+                  {session.completedDays.length} из 7 дней выполнено
+                </p>
+                <p className="mt-2 text-xs leading-5 text-[var(--text-3)]">
+                  Карта хранится только в этой вкладке и исчезнет после её закрытия.
+                </p>
               </div>
 
               <button
@@ -706,9 +864,12 @@ export function B2CPrototype() {
                 </h2>
 
                 <div className="mt-6 grid gap-3">
-                  {modules.map((module, index) => (
+                  {modules.map((module, index) => {
+                    const isComplete = session.completedDays.includes(module.day);
+
+                    return (
                     <article
-                      key={module.title}
+                      key={module.day}
                       className="prototype-chip relative grid gap-3 rounded-2xl border border-[var(--node-rest-border)] bg-[var(--node-rest-bg)] p-4 shadow-[var(--node-rest-shadow)] sm:grid-cols-[88px_1fr] sm:items-center"
                       style={{ animationDelay: `${index * 70}ms` }}
                     >
@@ -717,20 +878,27 @@ export function B2CPrototype() {
                           className="grid size-9 place-items-center rounded-xl text-sm font-bold text-white"
                           style={{ background: index === 0 ? activeColor : "var(--accent-grad)" }}
                         >
-                          {module.n}
+                          {module.day}
                         </span>
                         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-3)] sm:mt-2">
-                          {module.day}
+                          {module.label}
                         </p>
                       </div>
                       <div>
                         <h3 className="text-base font-semibold leading-6 text-[var(--text)]">{module.title}</h3>
-                        {index === 0 ? (
-                          <p className="mt-2 text-sm leading-6 text-[var(--text-2)]">{course.lessonDesc}</p>
-                        ) : null}
+                        <p className="mt-2 text-sm leading-6 text-[var(--text-2)]">{module.objective}</p>
+                        <p className="mt-1 text-sm leading-6 text-[var(--text-3)]">Практика: {module.practice}</p>
+                        <button
+                          type="button"
+                          onClick={() => toggleDay(module.day)}
+                          className="mt-3 rounded-lg border border-[var(--badge-border)] bg-[var(--badge-bg)] px-3 py-1.5 text-xs font-semibold text-[var(--accent-key)] transition hover:bg-[var(--accent-tint)]"
+                        >
+                          {isComplete ? "Снять отметку" : "Отметить выполненным"}
+                        </button>
                       </div>
                     </article>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
@@ -740,10 +908,11 @@ export function B2CPrototype() {
                     <CheckCircle2 aria-hidden className="size-4" />
                     Первый адаптированный урок
                   </p>
-                  <h3 className="mt-3 text-xl font-semibold leading-tight text-[var(--text)]">{course.lesson}</h3>
+                  <h3 className="mt-3 text-xl font-semibold leading-tight text-[var(--text)]">
+                    {course.firstLesson.title}
+                  </h3>
                   <p className="mt-3 text-sm leading-7 text-[var(--text-2)]">
-                    Обычный урок объясняет тему одинаково всем. Твой урок начинает с близкого контекста, показывает
-                    рабочий пример и сразу просит применить идею в маленьком действии.
+                    {course.firstLesson.explanation}
                   </p>
                 </article>
 
@@ -752,12 +921,16 @@ export function B2CPrototype() {
                     <Sparkles aria-hidden className="size-4" />
                     Задание + feedback
                   </p>
-                  <p className="mt-3 text-sm leading-7 text-[var(--text-2)]">{course.task}</p>
+                  <p className="mt-3 text-sm leading-7 text-[var(--text-2)]">{course.firstLesson.task}</p>
                   <div className="mt-4 rounded-2xl border border-[var(--badge-border)] bg-[var(--badge-bg)] p-3 text-sm leading-6 text-[var(--text)]">
-                    {course.feedbackPrompt}
+                    {course.firstLesson.feedbackPrompt}
                   </div>
                 </article>
               </div>
+
+              <p className="px-1 text-center text-xs text-[var(--text-3)]">
+                Создано с OpenRouter: {course.model}
+              </p>
             </div>
           </div>
         </section>
