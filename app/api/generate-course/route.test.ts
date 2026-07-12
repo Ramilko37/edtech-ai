@@ -7,7 +7,20 @@ function request() {
   return new Request("http://localhost/api/generate-course", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ topic: "AI для редактора", level: "basic" }),
+    body: JSON.stringify({
+      topic: "AI для редактора",
+      topicFamiliarity: "basic",
+      learnerSnapshot: {
+        role: "Редактор",
+        primaryGoal: "Развиваться в профессии",
+        goalHorizon: "quick",
+        language: "ru",
+        dailyTime: "20",
+        preferredFormat: "practice",
+        explanationComplexity: "professional",
+        enabledPersonalizationSignals: ["role", "primaryGoal"],
+      },
+    }),
   });
 }
 

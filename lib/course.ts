@@ -2,9 +2,9 @@ export type LearnerLevel = "beginner" | "basic" | "intermediate";
 
 export type GenerateCourseInput = {
   topic: string;
-  goal?: string;
-  context?: string;
-  level?: LearnerLevel;
+  courseGoal?: string;
+  topicFamiliarity?: LearnerLevel;
+  learnerSnapshot: LearnerSnapshot;
 };
 
 export type CoursePassportItem = {
@@ -80,18 +80,18 @@ function requiredString(value: unknown, message: string, maxLength = MAX_CONTENT
 export function validateGenerateCourseInput(value: unknown): GenerateCourseInput {
   const input = asRecord(value);
   const topic = requiredString(input.topic, "Укажите тему обучения", MAX_TOPIC_LENGTH);
-  const goal = optionalString(input.goal, MAX_OPTIONAL_LENGTH, "Проверьте цель обучения");
-  const context = optionalString(input.context, MAX_OPTIONAL_LENGTH, "Проверьте контекст обучения");
+  const courseGoal = optionalString(input.courseGoal, MAX_OPTIONAL_LENGTH, "Проверьте цель обучения");
+  const learnerSnapshot = validateLearnerSnapshot(input.learnerSnapshot);
 
-  if (input.level !== undefined && !levels.includes(input.level as LearnerLevel)) {
+  if (input.topicFamiliarity !== undefined && !levels.includes(input.topicFamiliarity as LearnerLevel)) {
     throw new CourseValidationError("Выберите корректный уровень");
   }
 
   return {
     topic,
-    ...(goal ? { goal } : {}),
-    ...(context ? { context } : {}),
-    ...(input.level ? { level: input.level as LearnerLevel } : {}),
+    ...(courseGoal ? { courseGoal } : {}),
+    ...(input.topicFamiliarity ? { topicFamiliarity: input.topicFamiliarity as LearnerLevel } : {}),
+    learnerSnapshot: { version: 1, ...learnerSnapshot },
   };
 }
 
@@ -158,3 +158,4 @@ export function parseGeneratedCourse(value: unknown, model: string, generatedAt:
     generatedAt: requiredString(generatedAt, "Неизвестное время генерации", 80),
   };
 }
+import { validateLearnerSnapshot, type LearnerSnapshot } from "./learner-snapshot";

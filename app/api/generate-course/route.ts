@@ -23,15 +23,23 @@ function json(body: unknown, status = 200) {
 
 function userPrompt(input: {
   topic: string;
-  goal?: string;
-  context?: string;
-  level?: string;
+  courseGoal?: string;
+  topicFamiliarity?: string;
+  learnerSnapshot: {
+    primaryGoal: string;
+    enabledPersonalizationSignals: readonly string[];
+    [key: string]: unknown;
+  };
 }) {
+  const profile = Object.entries(input.learnerSnapshot)
+    .filter(([key, value]) => key !== "enabledPersonalizationSignals" && value && input.learnerSnapshot.enabledPersonalizationSignals.includes(key))
+    .map(([key, value]) => `${key}: ${value}`);
+
   return [
     `Тема: ${input.topic}`,
-    input.goal ? `Цель: ${input.goal}` : "Цель: понять и применить основы",
-    input.context ? `Контекст: ${input.context}` : "Контекст: не указан",
-    input.level ? `Уровень: ${input.level}` : "Уровень: начинающий",
+    input.courseGoal ? `Цель курса: ${input.courseGoal}` : "Цель курса: понять и применить основы",
+    input.topicFamiliarity ? `Знакомство с темой: ${input.topicFamiliarity}` : "Знакомство с темой: начинающий",
+    `Разрешённый контекст ученика:\n${profile.join("\n") || "не указан"}`,
   ].join("\n");
 }
 

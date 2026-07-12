@@ -19,25 +19,35 @@ const validPayload = {
   },
 };
 
+const learnerSnapshot = {
+  primaryGoal: "Развиваться в профессии",
+  goalHorizon: "quick",
+  language: "ru",
+  dailyTime: "20",
+  preferredFormat: "practice",
+  explanationComplexity: "professional",
+  enabledPersonalizationSignals: ["primaryGoal"],
+};
+
 describe("validateGenerateCourseInput", () => {
   it("normalises optional learner signals and accepts a non-empty topic", () => {
     expect(
       validateGenerateCourseInput({
         topic: "  AI для редактора ",
-        goal: "  проверять тексты ",
-        context: "  редакция ",
-        level: "basic",
+        courseGoal: "  проверять тексты ",
+        topicFamiliarity: "basic",
+        learnerSnapshot,
       }),
     ).toEqual({
       topic: "AI для редактора",
-      goal: "проверять тексты",
-      context: "редакция",
-      level: "basic",
+      courseGoal: "проверять тексты",
+      topicFamiliarity: "basic",
+      learnerSnapshot: { version: 1, ...learnerSnapshot },
     });
   });
 
   it("rejects a missing topic and an unsupported level", () => {
-    expect(() => validateGenerateCourseInput({ topic: "", level: "expert" })).toThrow(
+    expect(() => validateGenerateCourseInput({ topic: "", topicFamiliarity: "expert", learnerSnapshot })).toThrow(
       "Укажите тему обучения",
     );
   });
