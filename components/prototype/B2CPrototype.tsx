@@ -646,6 +646,12 @@ export function B2CPrototype() {
     }
   };
 
+  const resetProfile = () => {
+    window.sessionStorage.removeItem(LEARNER_SNAPSHOT_KEY);
+    setSession(null);
+    setLearnerSnapshot(null);
+  };
+
   if (hasHydratedSession && !learnerSnapshot) {
     return <main className="min-h-[100svh] bg-[var(--page)]" style={themeVars[theme]}><LearnerOnboarding onComplete={setLearnerSnapshot} /></main>;
   }
@@ -853,6 +859,9 @@ export function B2CPrototype() {
               >
                 <RefreshCcw aria-hidden className="size-4" />
                 Собрать другой курс
+              </button>
+              <button type="button" onClick={resetProfile} className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-2xl border border-[var(--panel-border)] px-4 py-3 text-sm font-semibold text-[var(--text-2)]">
+                Изменить мой профиль
               </button>
             </aside>
 
