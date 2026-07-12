@@ -68,6 +68,27 @@ describe("POST /api/generate-course", () => {
     );
   });
 
+  it("accepts a JSON course wrapped in a markdown fence by a free model", async () => {
+    process.env.OPENROUTER_API_KEY = "test-key";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            model: "provider/example:free",
+            choices: [{ message: { content: `\`\`\`json\n${JSON.stringify(modelPayload())}\n\`\`\`` } }],
+          }),
+          { status: 200 },
+        ),
+      ),
+    );
+
+    const response = await POST(request());
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ course: { title: "AI для редактора: 7 дней практики" } });
+  });
+
   it("reports a missing server key without calling OpenRouter", async () => {
     delete process.env.OPENROUTER_API_KEY;
 

@@ -35,6 +35,15 @@ function userPrompt(input: {
   ].join("\n");
 }
 
+function parseModelJson(content: string) {
+  const withoutCodeFence = content
+    .trim()
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/, "");
+
+  return JSON.parse(withoutCodeFence);
+}
+
 export async function POST(request: Request): Promise<Response> {
   let input;
 
@@ -98,7 +107,7 @@ export async function POST(request: Request): Promise<Response> {
     }
 
     const course = parseGeneratedCourse(
-      JSON.parse(content),
+      parseModelJson(content),
       typeof payload.model === "string" ? payload.model : "openrouter/free",
       new Date().toISOString(),
     );
