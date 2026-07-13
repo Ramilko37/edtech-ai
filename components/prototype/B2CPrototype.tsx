@@ -653,7 +653,7 @@ export function B2CPrototype() {
   };
 
   if (hasHydratedSession && !learnerSnapshot) {
-    return <main className="min-h-[100svh] bg-[var(--page)]" style={themeVars[theme]}><LearnerOnboarding onComplete={setLearnerSnapshot} /></main>;
+    return <main className="prototype-screen min-h-[100svh] bg-[var(--page)]" style={themeVars[theme]}><LearnerOnboarding onComplete={setLearnerSnapshot} /></main>;
   }
 
   const activeCluster = constellationConfigs.find((item) => item.id === activeCourse);

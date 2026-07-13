@@ -2,7 +2,9 @@ import {
   CourseValidationError,
   parseGeneratedCourse,
   validateGenerateCourseInput,
+  type GenerateCourseInput,
 } from "@/lib/course";
+import { formatLearnerSnapshotForPrompt } from "@/lib/learner-snapshot";
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
@@ -21,19 +23,8 @@ function json(body: unknown, status = 200) {
   return Response.json(body, { status });
 }
 
-function userPrompt(input: {
-  topic: string;
-  courseGoal?: string;
-  topicFamiliarity?: string;
-  learnerSnapshot: {
-    primaryGoal: string;
-    enabledPersonalizationSignals: readonly string[];
-    [key: string]: unknown;
-  };
-}) {
-  const profile = Object.entries(input.learnerSnapshot)
-    .filter(([key, value]) => key !== "enabledPersonalizationSignals" && value && input.learnerSnapshot.enabledPersonalizationSignals.includes(key))
-    .map(([key, value]) => `${key}: ${value}`);
+function userPrompt(input: GenerateCourseInput) {
+  const profile = formatLearnerSnapshotForPrompt(input.learnerSnapshot);
 
   return [
     `Тема: ${input.topic}`,
@@ -71,57 +62,64 @@ export async function POST(request: Request): Promise<Response> {
     return json({ error: "Генерация пока не настроена" }, 503);
   }
 
-  let upstream: Response;
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    let upstream: Response;
 
-  try {
-    upstream = await fetch(OPENROUTER_URL, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "openrouter/free",
-        temperature: 0.5,
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt(input) },
-        ],
-      }),
-      signal: AbortSignal.timeout(30_000),
-    });
-  } catch {
-    return json({ error: "Не удалось связаться с бесплатной моделью. Попробуйте ещё раз." }, 503);
-  }
-
-  if (!upstream.ok) {
-    if (upstream.status === 429) {
-      return json({ error: "Бесплатная модель сейчас занята. Попробуйте ещё раз." }, 503);
+    try {
+      upstream = await fetch(OPENROUTER_URL, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "openrouter/free",
+          temperature: 0.5,
+          response_format: { type: "json_object" },
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt(input) },
+          ],
+        }),
+        signal: AbortSignal.timeout(30_000),
+      });
+    } catch {
+      return json({ error: "Не удалось связаться с бесплатной моделью. Попробуйте ещё раз." }, 503);
     }
 
-    return json({ error: "Бесплатная модель временно недоступна. Попробуйте ещё раз." }, 503);
-  }
+    if (!upstream.ok) {
+      if (upstream.status === 429) {
+        return json({ error: "Бесплатная модель сейчас занята. Попробуйте ещё раз." }, 503);
+      }
 
-  try {
-    const payload = (await upstream.json()) as {
-      model?: unknown;
-      choices?: Array<{ message?: { content?: unknown } }>;
-    };
-    const content = payload.choices?.[0]?.message?.content;
-
-    if (typeof content !== "string") {
-      throw new CourseValidationError("У модели нет содержимого ответа");
+      return json({ error: "Бесплатная модель временно недоступна. Попробуйте ещё раз." }, 503);
     }
 
-    const course = parseGeneratedCourse(
-      parseModelJson(content),
-      typeof payload.model === "string" ? payload.model : "openrouter/free",
-      new Date().toISOString(),
-    );
+    try {
+      const payload = (await upstream.json()) as {
+        model?: unknown;
+        choices?: Array<{ message?: { content?: unknown } }>;
+      };
+      const content = payload.choices?.[0]?.message?.content;
 
-    return json({ course });
-  } catch {
-    return json({ error: "Модель вернула неполную карту. Попробуйте ещё раз." }, 502);
+      if (typeof content !== "string") {
+        throw new CourseValidationError("У модели нет содержимого ответа");
+      }
+
+      const course = parseGeneratedCourse(
+        parseModelJson(content),
+        typeof payload.model === "string" ? payload.model : "openrouter/free",
+        new Date().toISOString(),
+      );
+
+      return json({ course });
+    } catch (error) {
+      console.error(
+        `OpenRouter returned an invalid course payload (attempt ${attempt}/2):`,
+        error instanceof Error ? error.message : "unknown validation error",
+      );
+    }
   }
+
+  return json({ error: "Модель вернула неполную карту. Попробуйте ещё раз." }, 502);
 }

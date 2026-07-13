@@ -129,6 +129,53 @@ select {
   animation: prototype-spin 1.4s linear infinite;
 }
 
+.onboarding-grid {
+  background-image:
+    linear-gradient(rgba(139, 107, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(139, 107, 255, 0.045) 1px, transparent 1px);
+  background-size: 4rem 4rem;
+  mask-image: linear-gradient(to bottom, black, transparent 82%);
+}
+
+.onboarding-step {
+  animation: onboarding-step-in 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.onboarding-fingerprint {
+  animation: onboarding-fingerprint-in 320ms ease both;
+}
+
+@keyframes onboarding-step-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes onboarding-fingerprint-in {
+  from {
+    opacity: 0;
+    transform: translateX(-0.4rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .onboarding-step,
+  .onboarding-fingerprint {
+    animation: none;
+  }
+}
+
 @keyframes prototype-fade-up {
   from {
     opacity: 0;

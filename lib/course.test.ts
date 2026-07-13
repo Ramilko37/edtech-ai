@@ -20,11 +20,16 @@ const validPayload = {
 };
 
 const learnerSnapshot = {
+  currentFocus: "work",
   primaryGoal: "Развиваться в профессии",
+  successCriterion: "apply",
   goalHorizon: "quick",
   language: "ru",
   dailyTime: "20",
+  studyFrequency: "few-times-week",
+  learningBarrier: "theory-overload",
   preferredFormat: "practice",
+  supportPreference: "smaller-steps",
   explanationComplexity: "professional",
   enabledPersonalizationSignals: ["primaryGoal"],
 };
@@ -42,7 +47,7 @@ describe("validateGenerateCourseInput", () => {
       topic: "AI для редактора",
       courseGoal: "проверять тексты",
       topicFamiliarity: "basic",
-      learnerSnapshot: { version: 1, ...learnerSnapshot },
+      learnerSnapshot: { version: 2, ...learnerSnapshot },
     });
   });
 

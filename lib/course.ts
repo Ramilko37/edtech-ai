@@ -91,7 +91,7 @@ export function validateGenerateCourseInput(value: unknown): GenerateCourseInput
     topic,
     ...(courseGoal ? { courseGoal } : {}),
     ...(input.topicFamiliarity ? { topicFamiliarity: input.topicFamiliarity as LearnerLevel } : {}),
-    learnerSnapshot: { version: 1, ...learnerSnapshot },
+    learnerSnapshot: { version: 2, ...learnerSnapshot },
   };
 }
 

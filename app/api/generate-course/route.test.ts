@@ -12,13 +12,19 @@ function request() {
       topicFamiliarity: "basic",
       learnerSnapshot: {
         role: "Редактор",
+        domain: "Медиа",
+        currentFocus: "work",
         primaryGoal: "Развиваться в профессии",
+        successCriterion: "apply",
         goalHorizon: "quick",
         language: "ru",
         dailyTime: "20",
+        studyFrequency: "few-times-week",
+        learningBarrier: "theory-overload",
         preferredFormat: "practice",
+        supportPreference: "smaller-steps",
         explanationComplexity: "professional",
-        enabledPersonalizationSignals: ["role", "primaryGoal"],
+        enabledPersonalizationSignals: ["role", "primaryGoal", "successCriterion"],
       },
     }),
   });
@@ -79,6 +85,10 @@ describe("POST /api/generate-course", () => {
         headers: expect.objectContaining({ Authorization: "Bearer test-key" }),
       }),
     );
+    const upstreamBody = JSON.parse(fetchMock.mock.calls[0][1].body as string);
+    const prompt = upstreamBody.messages[1].content as string;
+    expect(prompt).toContain("Желаемый результат: применять самостоятельно");
+    expect(prompt).not.toContain("Медиа");
   });
 
   it("accepts a JSON course wrapped in a markdown fence by a free model", async () => {
@@ -100,6 +110,37 @@ describe("POST /api/generate-course", () => {
 
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({ course: { title: "AI для редактора: 7 дней практики" } });
+  });
+
+  it("retries once when the first free model returns an incomplete course", async () => {
+    process.env.OPENROUTER_API_KEY = "test-key";
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            model: "provider/first:free",
+            choices: [{ message: { content: JSON.stringify(modelPayload(6)) } }],
+          }),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            model: "provider/second:free",
+            choices: [{ message: { content: JSON.stringify(modelPayload()) } }],
+          }),
+          { status: 200 },
+        ),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await POST(request());
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ course: { model: "provider/second:free" } });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it("reports a missing server key without calling OpenRouter", async () => {
@@ -125,15 +166,13 @@ describe("POST /api/generate-course", () => {
 
   it("rejects an incomplete course returned by the model", async () => {
     process.env.OPENROUTER_API_KEY = "test-key";
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue(
+    const fetchMock = vi.fn().mockResolvedValue(
         new Response(
           JSON.stringify({ choices: [{ message: { content: JSON.stringify(modelPayload(6)) } }] }),
           { status: 200 },
         ),
-      ),
-    );
+      );
+    vi.stubGlobal("fetch", fetchMock);
 
     const response = await POST(request());
 
@@ -141,5 +180,6 @@ describe("POST /api/generate-course", () => {
     await expect(response.json()).resolves.toEqual({
       error: "Модель вернула неполную карту. Попробуйте ещё раз.",
     });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });
