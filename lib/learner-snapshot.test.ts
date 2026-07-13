@@ -7,53 +7,48 @@ import {
 } from "./learner-snapshot";
 
 const snapshot = {
-  role: "Аккаунт-менеджер",
-  domain: "B2B SaaS",
-  currentFocus: "work",
-  primaryGoal: "Развиваться в профессии",
-  successCriterion: "apply",
-  goalHorizon: "quick",
-  language: "ru",
+  selfDescription: "Я продуктовый дизайнер в EdTech, провожу исследования и люблю архитектуру и бег.",
+  profileSummary: "Продуктовый дизайнер с опытом исследований и интересом к архитектуре и бегу.",
+  role: "Продуктовый дизайнер",
+  domain: "EdTech",
+  background: "Исследования пользователей",
+  interests: "архитектура, бег",
+  followUpQuestion: "Какие рабочие ситуации лучше использовать в примерах?",
+  followUpAnswer: "Проверка продуктовых гипотез",
+  successCriterion: "create",
   dailyTime: "20",
-  studyFrequency: "few-times-week",
-  learningBarrier: "theory-overload",
-  preferredFormat: "practice",
-  supportPreference: "smaller-steps",
-  explanationComplexity: "professional",
-  interests: "велоспорт",
-  enabledPersonalizationSignals: ["role", "primaryGoal", "successCriterion", "preferredFormat"],
+  language: "ru",
+  enabledPersonalizationSignals: ["profileSummary", "role", "background", "followUpAnswer", "successCriterion", "dailyTime"],
 };
 
-describe("learner snapshot", () => {
-  it("accepts a voluntary learner context", () => {
-    expect(validateLearnerSnapshot(snapshot)).toMatchObject({ role: "Аккаунт-менеджер", language: "ru" });
+describe("learner snapshot v3", () => {
+  it("accepts an intentional AI-interview profile", () => {
+    expect(validateLearnerSnapshot(snapshot)).toMatchObject({
+      role: "Продуктовый дизайнер",
+      successCriterion: "create",
+    });
   });
 
-  it("rejects unknown consent signals", () => {
-    expect(() => validateLearnerSnapshot({ ...snapshot, enabledPersonalizationSignals: ["country"] })).toThrow("Выберите корректные сигналы");
-  });
-
-  it("rejects unsupported diagnostic answers", () => {
-    expect(() => validateLearnerSnapshot({ ...snapshot, learningBarrier: "low-ability" })).toThrow(
-      "Выберите главное препятствие",
-    );
+  it("rejects missing intentional choices", () => {
+    expect(() => validateLearnerSnapshot({ ...snapshot, dailyTime: undefined })).toThrow("Выберите доступное время");
   });
 
   it("formats only consented signals as readable prompt context", () => {
     const value = createLearnerSnapshot(validateLearnerSnapshot(snapshot));
-
     expect(formatLearnerSnapshotForPrompt(value)).toEqual([
-      "Роль или занятие: Аккаунт-менеджер",
-      "Общая цель развития: Развиваться в профессии",
-      "Желаемый результат: применять самостоятельно",
-      "Удобный вход в тему: начать с небольшой практики",
+      "Краткий слепок: Продуктовый дизайнер с опытом исследований и интересом к архитектуре и бегу.",
+      "Роль или занятие: Продуктовый дизайнер",
+      "Полезный прошлый опыт: Исследования пользователей",
+      "Ответ на персональный вопрос: Проверка продуктовых гипотез",
+      "Желаемый результат: создать конкретный результат",
+      "Длительность занятия: 20 минут",
     ]);
-    expect(formatLearnerSnapshotForPrompt(value).join("\n")).not.toContain("B2B SaaS");
+    expect(formatLearnerSnapshotForPrompt(value).join("\n")).not.toContain("EdTech");
   });
 
-  it("restores only a current, valid session payload", () => {
+  it("restores only a current v3 session payload", () => {
     const value = JSON.stringify(createLearnerSnapshot(validateLearnerSnapshot(snapshot)));
-    expect(parseLearnerSnapshot(value)).toMatchObject({ version: 2, role: "Аккаунт-менеджер" });
-    expect(parseLearnerSnapshot('{"version":1}')).toBeNull();
+    expect(parseLearnerSnapshot(value)).toMatchObject({ version: 3, role: "Продуктовый дизайнер" });
+    expect(parseLearnerSnapshot(JSON.stringify({ version: 2, ...snapshot }))).toBeNull();
   });
 });

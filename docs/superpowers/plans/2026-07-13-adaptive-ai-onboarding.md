@@ -31,10 +31,10 @@
 - Produces: `validateProfileNarrative(value)`, `parseProfileAnalysis(value)`, `ProfileAnalysis`.
 - Route accepts `{ narrative: string }` and returns `{ analysis, model }`.
 
-- [ ] Write failing tests for narrative bounds, exactly three follow-up choices, valid route output, one structural retry, missing key and rate-limit errors.
-- [ ] Run focused tests and confirm failures are caused by the missing module and route.
-- [ ] Implement the pure validators and OpenRouter route with JSON-only prompting and one structural retry.
-- [ ] Re-run focused tests until green.
+- [x] Write failing tests for narrative bounds, exactly three follow-up choices, valid route output, one structural retry, missing key and rate-limit errors.
+- [x] Run focused tests and confirm failures are caused by the missing module and route.
+- [x] Implement the pure validators and OpenRouter route with JSON-only prompting and one structural retry.
+- [x] Re-run focused tests until green.
 
 ### Task 2: Learner snapshot v3
 
@@ -49,10 +49,10 @@
 - Produces: `LearnerSnapshot` version 3 and readable consent-filtered prompt lines.
 - Consumes: structured values from `ProfileAnalysis` and the user's follow-up answer.
 
-- [ ] Write failing tests for v3 storage, required intentional choices, rejected v2 data and readable prompt formatting.
-- [ ] Run focused tests and confirm they fail against v2.
-- [ ] Implement the v3 contract, validation and formatting; update course fixtures and version construction.
-- [ ] Re-run focused tests until green.
+- [x] Write failing tests for v3 storage, required intentional choices, rejected v2 data and readable prompt formatting.
+- [x] Run focused tests and confirm they fail against v2.
+- [x] Implement the v3 contract, validation and formatting; update course fixtures and version construction.
+- [x] Re-run focused tests until green.
 
 ### Task 3: Four-stage AI interview UI
 
@@ -65,10 +65,10 @@
 - Consumes: `/api/analyze-learner`, `ProfileAnalysis`, `createLearnerSnapshot`.
 - Produces: `onComplete(snapshot: LearnerSnapshot)` only after explicit review.
 
-- [ ] Build narrative, AI follow-up, contract and review stages without default answers.
-- [ ] Add loading, retry and error states for the live profile analysis.
-- [ ] Add responsive editorial layout, four-segment progress, mobile fixed CTA and accessible controls.
-- [ ] Keep extracted context editable by returning to the narrative and removable on review.
+- [x] Build narrative, AI follow-up, contract and review stages without default answers.
+- [x] Add loading, retry and error states for the live profile analysis.
+- [x] Add responsive editorial layout, four-segment progress, mobile fixed CTA and accessible controls.
+- [x] Keep extracted context editable by returning to the narrative and removable on review.
 
 ### Task 4: Verification and delivery
 
@@ -78,9 +78,9 @@
 **Interfaces:**
 - Produces: pushed `codex/openrouter-session-course` commit.
 
-- [ ] Run all tests, production build and `git diff --check`.
-- [ ] Complete the live browser flow at desktop and 375 px mobile.
-- [ ] Verify one real OpenRouter profile analysis and one generated course.
+- [x] Run all tests, production build and `git diff --check`.
+- [x] Complete the live browser flow at desktop and 390 px mobile.
+- [x] Verify one real OpenRouter profile analysis and one generated course.
 - [ ] Commit and push the branch without merging or deleting the worktree.
 
 ## Self-Review

@@ -13,3 +13,4 @@ pnpm-debug.log*
 .vercel
 .playwright-cli/
 output/playwright/
+output/audit/

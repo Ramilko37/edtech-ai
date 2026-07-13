@@ -11,20 +11,16 @@ function request() {
       topic: "AI для редактора",
       topicFamiliarity: "basic",
       learnerSnapshot: {
+        selfDescription: "Я редактор в медиа, работаю с аналитическими текстами и люблю историю.",
+        profileSummary: "Редактор аналитических материалов с интересом к истории.",
         role: "Редактор",
         domain: "Медиа",
-        currentFocus: "work",
-        primaryGoal: "Развиваться в профессии",
         successCriterion: "apply",
-        goalHorizon: "quick",
+        followUpQuestion: "Какие тексты использовать в примерах?",
+        followUpAnswer: "Аналитические статьи",
         language: "ru",
         dailyTime: "20",
-        studyFrequency: "few-times-week",
-        learningBarrier: "theory-overload",
-        preferredFormat: "practice",
-        supportPreference: "smaller-steps",
-        explanationComplexity: "professional",
-        enabledPersonalizationSignals: ["role", "primaryGoal", "successCriterion"],
+        enabledPersonalizationSignals: ["role", "profileSummary", "followUpAnswer", "successCriterion"],
       },
     }),
   });
@@ -87,7 +83,7 @@ describe("POST /api/generate-course", () => {
     );
     const upstreamBody = JSON.parse(fetchMock.mock.calls[0][1].body as string);
     const prompt = upstreamBody.messages[1].content as string;
-    expect(prompt).toContain("Желаемый результат: применять самостоятельно");
+    expect(prompt).toContain("Ответ на персональный вопрос: Аналитические статьи");
     expect(prompt).not.toContain("Медиа");
   });
 
