@@ -1,10 +1,16 @@
 import type { Metadata } from "next";
-import { Manrope } from "next/font/google";
+import { Lora, Manrope } from "next/font/google";
 import "./globals.css";
 
 const manrope = Manrope({
   subsets: ["cyrillic", "latin"],
   variable: "--font-manrope",
+  display: "swap",
+});
+
+const editorial = Lora({
+  subsets: ["cyrillic", "latin"],
+  variable: "--font-editorial",
   display: "swap",
 });
 
@@ -21,7 +27,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ru">
-      <body className={`${manrope.variable} font-sans antialiased`}>
+      <body className={`${manrope.variable} ${editorial.variable} font-sans antialiased`}>
         {children}
       </body>
     </html>

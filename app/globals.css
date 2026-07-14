@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #101828;
+  --background: #f4f0e8;
+  --foreground: #202723;
 }
 
 * {
@@ -17,9 +17,7 @@ html {
 
 body {
   margin: 0;
-  background:
-    radial-gradient(circle at 18% 0%, rgba(41, 200, 242, 0.2), transparent 26rem),
-    linear-gradient(180deg, #07111c 0%, #0b2730 35rem, #edf5f7 35rem);
+  background: var(--background);
   color: var(--foreground);
 }
 
@@ -31,195 +29,34 @@ select {
 }
 
 ::selection {
-  background: rgba(41, 200, 242, 0.28);
-}
-
-.dark-grid {
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.055) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.055) 1px, transparent 1px);
-  background-size: 4.5rem 4.5rem;
+  background: #f1ded3;
+  color: #202723;
 }
 
 .section-shell {
-  @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
-}
-
-.fade-up {
-  animation: fade-up 420ms ease both;
-}
-
-.fade-up-delay {
-  animation: fade-up 520ms 50ms ease both;
-}
-
-.motion-gradient {
-  animation: gradient-drift 14s ease-in-out infinite alternate;
-}
-
-.motion-float {
-  animation: float-panel 6.5s ease-in-out infinite;
-}
-
-.motion-float-delay {
-  animation: float-panel 7.5s 900ms ease-in-out infinite;
-}
-
-.motion-pulse {
-  animation: soft-pulse 2.6s ease-in-out infinite;
-}
-
-.motion-bounce {
-  animation: micro-bounce 1.8s ease-in-out infinite;
-}
-
-.motion-spin-slow {
-  animation: spin-slow 18s linear infinite;
-}
-
-.motion-scan {
-  overflow: hidden;
-}
-
-.motion-scan::after {
-  animation: scan-line 3.8s ease-in-out infinite;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(49, 215, 255, 0.26),
-    transparent
-  );
-  content: "";
-  inset: 0;
-  position: absolute;
-  transform: translateX(-120%);
-}
-
-.motion-stagger {
-  animation: fade-up 560ms ease both;
-  animation-delay: var(--motion-delay, 0ms);
-}
-
-.motion-shimmer {
-  background-size: 220% 100%;
-  animation: shimmer 4.5s ease-in-out infinite;
+  @apply mx-auto w-full max-w-[1180px] px-4 sm:px-6 lg:px-8;
 }
 
 .prototype-screen {
   font-family: var(--font-manrope), Manrope, system-ui, sans-serif;
 }
 
+.prototype-display {
+  font-family: var(--font-editorial), Georgia, serif;
+  font-weight: 500;
+}
+
 .prototype-input::placeholder {
-  color: var(--placeholder, rgba(238, 240, 248, 0.32));
-}
-
-.prototype-fade {
-  animation: prototype-fade-up 760ms ease both;
-}
-
-.prototype-chip {
-  animation: prototype-chip-in 520ms ease both;
-}
-
-.prototype-pulse {
-  animation: prototype-soft-pulse 3s ease-in-out infinite;
-}
-
-.prototype-spin {
-  animation: prototype-spin 1.4s linear infinite;
-}
-
-.onboarding-grid {
-  background-image:
-    linear-gradient(rgba(139, 107, 255, 0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(139, 107, 255, 0.045) 1px, transparent 1px);
-  background-size: 4rem 4rem;
-  mask-image: linear-gradient(to bottom, black, transparent 82%);
+  color: var(--placeholder, #8a9087);
 }
 
 .onboarding-step {
-  animation: onboarding-step-in 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-.onboarding-fingerprint {
-  animation: onboarding-fingerprint-in 320ms ease both;
+  animation: onboarding-step-in 260ms ease-out both;
 }
 
 @keyframes onboarding-step-in {
   from {
     opacity: 0;
-    transform: translateY(0.75rem);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes onboarding-fingerprint-in {
-  from {
-    opacity: 0;
-    transform: translateX(-0.4rem);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .onboarding-step,
-  .onboarding-fingerprint {
-    animation: none;
-  }
-}
-
-@keyframes prototype-fade-up {
-  from {
-    opacity: 0;
-    transform: translateY(0.875rem);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes prototype-chip-in {
-  from {
-    opacity: 0;
-    transform: translateY(0.625rem) scale(0.96);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@keyframes prototype-soft-pulse {
-  0%,
-  100% {
-    opacity: 0.6;
-  }
-
-  50% {
-    opacity: 1;
-  }
-}
-
-@keyframes prototype-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes fade-up {
-  from {
-    opacity: 0.88;
     transform: translateY(0.5rem);
   }
 
@@ -229,107 +66,12 @@ select {
   }
 }
 
-@keyframes gradient-drift {
-  from {
-    transform: scale(1);
-    opacity: 0.92;
-  }
-
-  to {
-    transform: scale(1.05) translate3d(1.5rem, -0.75rem, 0);
-    opacity: 1;
-  }
-}
-
-@keyframes float-panel {
-  0%,
-  100% {
-    transform: translate3d(0, 0, 0);
-  }
-
-  50% {
-    transform: translate3d(0, -0.7rem, 0);
-  }
-}
-
-@keyframes soft-pulse {
-  0%,
-  100% {
-    opacity: 0.7;
-    transform: scale(1);
-  }
-
-  50% {
-    opacity: 1;
-    transform: scale(1.08);
-  }
-}
-
-@keyframes micro-bounce {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-
-  50% {
-    transform: translateY(0.35rem);
-  }
-}
-
-@keyframes spin-slow {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes scan-line {
-  0% {
-    transform: translateX(-120%);
-  }
-
-  42%,
-  100% {
-    transform: translateX(120%);
-  }
-}
-
-@keyframes shimmer {
-  0%,
-  100% {
-    background-position: 0% 50%;
-  }
-
-  50% {
-    background-position: 100% 50%;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
   }
 
-  .fade-up,
-  .fade-up-delay,
-  .motion-gradient,
-  .motion-float,
-  .motion-float-delay,
-  .motion-pulse,
-  .motion-bounce,
-  .motion-spin-slow,
-  .motion-stagger,
-  .motion-shimmer {
+  .onboarding-step {
     animation: none;
-  }
-
-  .prototype-fade,
-  .prototype-chip,
-  .prototype-pulse,
-  .prototype-spin {
-    animation: none;
-  }
-
-  .motion-scan::after {
-    display: none;
   }
 }

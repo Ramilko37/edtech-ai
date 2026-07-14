@@ -10,8 +10,6 @@ import {
   MessageCircleMore,
   Pencil,
   ShieldCheck,
-  Sparkles,
-  Target,
   X,
 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -30,11 +28,7 @@ type Stage = 0 | 1 | 2 | 3;
 
 const stages = ["Ваш контекст", "Один вопрос", "Учебный контракт", "Ваш слепок"] as const;
 
-const outcomeOptions: Array<{
-  value: SuccessCriterion;
-  label: string;
-  description: string;
-}> = [
+const outcomeOptions: Array<{ value: SuccessCriterion; label: string; description: string }> = [
   { value: "understand", label: "Разобраться в системе", description: "Понять логику, связи и общую картину" },
   { value: "apply", label: "Применять самостоятельно", description: "Уверенно решать реальные задачи" },
   { value: "create", label: "Создать результат", description: "Сделать проект, документ или прототип" },
@@ -58,7 +52,7 @@ const signalLabels: Record<PersonalizationSignal, string> = {
   dailyTime: "Ритм",
 };
 
-function ChoiceCard({
+function ChoiceRow({
   active,
   label,
   description,
@@ -75,20 +69,22 @@ function ChoiceCard({
       role="radio"
       aria-checked={active}
       onClick={onClick}
-      className={`group relative min-h-[5.75rem] rounded-[1.25rem] border p-4 text-left transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] sm:p-5 ${
+      className={`relative flex min-h-14 w-full items-start gap-3 border-b px-1 py-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--page)] ${
         active
-          ? "border-[var(--accent)] bg-[var(--accent-tint)] shadow-[0_18px_55px_-36px_var(--accent)]"
-          : "border-[var(--panel-border)] bg-[var(--pill)] hover:-translate-y-0.5 hover:border-[var(--glass-border)] hover:bg-[var(--glass)]"
+          ? "border-[var(--accent)] bg-[var(--accent-tint)]"
+          : "border-[var(--panel-border)] bg-transparent hover:border-[var(--accent)]"
       }`}
     >
-      <span className="block pr-8 text-sm font-semibold text-[var(--text)] sm:text-[0.95rem]">{label}</span>
-      <span className="mt-1.5 block text-xs leading-relaxed text-[var(--text-2)] sm:text-sm">{description}</span>
       <span
-        className={`absolute right-4 top-4 grid size-5 place-items-center rounded-full border transition ${
-          active ? "border-[var(--accent)] bg-[var(--accent)] text-white" : "border-[var(--node-rest-border)] text-transparent"
+        className={`mt-1 grid size-5 shrink-0 place-items-center rounded-sm border ${
+          active ? "border-[var(--accent)] bg-[var(--accent)] text-white" : "border-[var(--panel-border)] text-transparent"
         }`}
       >
         <Check aria-hidden className="size-3" strokeWidth={3} />
+      </span>
+      <span className="block min-w-0">
+        <span className="block text-base font-semibold leading-6 text-[var(--text)]">{label}</span>
+        <span className="mt-1 block text-sm leading-6 text-[var(--text-2)]">{description}</span>
       </span>
     </button>
   );
@@ -205,69 +201,50 @@ export function LearnerOnboarding({ onComplete }: Props) {
   };
 
   return (
-    <section className="relative min-h-[100svh] overflow-hidden bg-[var(--page)] text-[var(--text)]">
-      <div aria-hidden className="pointer-events-none absolute inset-0 onboarding-grid opacity-60" />
-      <div aria-hidden className="pointer-events-none absolute -left-56 top-[-20rem] size-[42rem] rounded-full bg-[var(--accent)] opacity-[0.13] blur-[140px]" />
-      <div aria-hidden className="pointer-events-none absolute -right-48 bottom-[-18rem] size-[38rem] rounded-full bg-[var(--cyan)] opacity-[0.09] blur-[140px]" />
-
-      <div className="relative mx-auto flex min-h-[100svh] w-full max-w-[92rem] flex-col">
-        <header className="flex items-center justify-between border-b border-[var(--panel-border)] px-4 py-4 sm:px-8 lg:px-12">
-          <div className="flex items-center gap-3">
-            <span className="grid size-10 place-items-center rounded-xl bg-[var(--accent-grad)] text-white shadow-[0_12px_32px_-14px_var(--accent)]">
-              <Sparkles aria-hidden className="size-5" />
-            </span>
-            <div>
-              <p className="text-sm font-semibold">ContextPath AI</p>
-              <p className="text-xs text-[var(--text-3)]">Первое знакомство</p>
-            </div>
+    <section className="relative min-h-[100svh] bg-[var(--page)] text-[var(--text)]">
+      <div className="mx-auto w-full max-w-[1180px] px-4 sm:px-6 lg:px-8">
+        <header className="flex items-center justify-between border-b border-[var(--panel-border)] py-5">
+          <div>
+            <p className="text-base font-semibold">ContextPath AI</p>
+            <p className="mt-1 text-sm text-[var(--text-3)]">Первое знакомство</p>
           </div>
-          <div className="hidden items-center gap-2 text-xs text-[var(--text-3)] sm:flex">
-            <LockKeyhole aria-hidden className="size-3.5" /> Только в этой вкладке
-          </div>
+          <p className="hidden items-center gap-2 text-sm text-[var(--text-3)] sm:flex">
+            <LockKeyhole aria-hidden className="size-4" /> Только в этой вкладке
+          </p>
         </header>
 
-        <div className="grid flex-1 lg:grid-cols-[18rem_minmax(0,1fr)] xl:grid-cols-[21rem_minmax(0,1fr)]">
-          <aside className="hidden border-r border-[var(--panel-border)] bg-[var(--glass)] px-7 py-9 backdrop-blur-xl lg:block xl:px-9">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-3)]">Как это работает</p>
-            <div className="mt-7 space-y-6">
+        <div className="grid lg:grid-cols-[14rem_minmax(0,47.5rem)] lg:justify-center lg:gap-10">
+          <aside className="hidden border-r border-[var(--panel-border)] py-10 pr-7 lg:block">
+            <p className="text-sm font-semibold text-[var(--text-2)]">Ваш путь</p>
+            <ol className="mt-6 space-y-1">
               {stages.map((item, index) => (
-                <div key={item} className="flex items-start gap-3">
-                  <span
-                    className={`mt-0.5 grid size-7 shrink-0 place-items-center rounded-full border text-xs font-semibold transition ${
-                      index < stage
-                        ? "border-[var(--accent)] bg-[var(--accent)] text-white"
-                        : index === stage
-                          ? "border-[var(--accent)] bg-[var(--accent-tint)] text-[var(--accent-key)]"
-                          : "border-[var(--node-rest-border)] text-[var(--text-3)]"
-                    }`}
-                  >
-                    {index < stage ? <Check aria-hidden className="size-3.5" /> : index + 1}
-                  </span>
-                  <div>
-                    <p className={`text-sm font-medium ${index === stage ? "text-[var(--text)]" : "text-[var(--text-2)]"}`}>{item}</p>
-                    {index === stage ? <p className="mt-1 text-xs leading-relaxed text-[var(--text-3)]">Сейчас</p> : null}
-                  </div>
-                </div>
+                <li key={item} className={`border-l-2 py-3 pl-3 ${index <= stage ? "border-[var(--accent)]" : "border-[var(--panel-border)]"}`}>
+                  <p className={`text-sm ${index === stage ? "font-semibold text-[var(--text)]" : "text-[var(--text-2)]"}`}>
+                    {index < stage ? <Check aria-label="Готово" className="mr-1 inline size-3.5 text-[var(--accent)]" /> : <span className="mr-1 text-[var(--text-3)]">{index + 1}.</span>}
+                    {item}
+                  </p>
+                  {index === stage ? <p className="mt-1 text-sm text-[var(--text-3)]">Сейчас</p> : null}
+                </li>
               ))}
-            </div>
+            </ol>
 
-            <div className="mt-10 border-t border-[var(--panel-border)] pt-7">
-              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--accent-key)]">
+            <section className="mt-10 border-t border-[var(--panel-border)] pt-6" aria-label="Контекст, который понял AI">
+              <p className="flex items-center gap-2 text-sm font-semibold text-[var(--accent-key)]">
                 <BrainCircuit aria-hidden className="size-4" /> AI понимает
               </p>
               {analysis ? (
-                <div className="mt-4 space-y-3">
+                <div className="mt-4">
                   {extractedFacts.length ? extractedFacts.map((fact) => (
-                    <div key={fact.signal} className="onboarding-fingerprint border-l border-[var(--accent-tint-2)] pl-3">
-                      <p className="text-[0.65rem] uppercase tracking-[0.12em] text-[var(--text-3)]">{fact.label}</p>
-                      <p className="mt-1 text-xs leading-relaxed text-[var(--text-2)]">{fact.value}</p>
+                    <div key={fact.signal} className="border-t border-[var(--panel-border)] py-3 first:border-t-0 first:pt-0">
+                      <p className="text-sm font-medium text-[var(--text-2)]">{fact.label}</p>
+                      <p className="mt-1 text-sm leading-6 text-[var(--text-3)]">{fact.value}</p>
                     </div>
-                  )) : <p className="text-xs leading-relaxed text-[var(--text-3)]">Контекст собран без догадок о роли и сфере.</p>}
+                  )) : <p className="text-sm leading-6 text-[var(--text-3)]">Контекст собран без догадок о роли и сфере.</p>}
                 </div>
               ) : (
-                <p className="mt-3 text-xs leading-relaxed text-[var(--text-3)]">Роль, опыт и интересы — только из вашего рассказа, без психологических тестов.</p>
+                <p className="mt-3 text-sm leading-6 text-[var(--text-3)]">Роль, опыт и интересы — только из вашего рассказа.</p>
               )}
-            </div>
+            </section>
           </aside>
 
           <form
@@ -277,30 +254,22 @@ export function LearnerOnboarding({ onComplete }: Props) {
             }}
             className="flex min-w-0 flex-col"
           >
-            <div className="border-b border-[var(--panel-border)] px-4 py-4 sm:px-8 lg:px-12">
-              <div className="mx-auto flex max-w-4xl gap-2" aria-label={`Шаг ${stage + 1} из ${stages.length}`}>
-                {stages.map((item, index) => (
-                  <div key={item} className="flex-1">
-                    <div className={`h-1 rounded-full transition-colors ${index <= stage ? "bg-[var(--accent)]" : "bg-[var(--node-rest-bg)]"}`} />
-                    <p className={`mt-2 hidden text-[0.68rem] sm:block ${index === stage ? "font-semibold text-[var(--text)]" : "text-[var(--text-3)]"}`}>{item}</p>
-                  </div>
-                ))}
+            <div className="border-b border-[var(--panel-border)] py-4 lg:hidden">
+              <div className="flex gap-2" aria-label={`Шаг ${stage + 1} из ${stages.length}`}>
+                {stages.map((item, index) => <span key={item} className={`h-1 flex-1 ${index <= stage ? "bg-[var(--accent)]" : "bg-[var(--panel-border)]"}`} />)}
               </div>
+              <p className="mt-2 text-sm text-[var(--text-3)]">Шаг {stage + 1} из {stages.length} · {stages[stage]}</p>
             </div>
 
-            <main className="flex-1 px-4 pb-28 pt-9 sm:px-8 sm:pt-14 lg:px-12 lg:pb-12 xl:px-20">
-              <div key={stage} className="onboarding-step mx-auto w-full max-w-4xl">
+            <main className="min-h-[calc(100svh-10rem)] px-0 pb-28 pt-10 lg:pb-10">
+              <div key={stage} className="onboarding-step w-full max-w-[65ch]">
                 {stage === 0 ? (
                   <>
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--accent-key)]">Шаг 1 · Живой контекст</p>
-                    <h1 className="mt-4 max-w-[18ch] text-balance text-[clamp(2.2rem,5.4vw,4.35rem)] font-semibold leading-[1.02] tracking-[-0.045em]">
-                      Расскажите о себе как человеку, а не анкете
-                    </h1>
-                    <p className="mt-5 max-w-2xl text-sm leading-relaxed text-[var(--text-2)] sm:text-base">
-                      Чем занимаетесь, что уже умеете и что вам по-настоящему интересно. Конкретную тему обучения выберете после знакомства.
-                    </p>
+                    <p className="text-sm font-semibold text-[var(--accent-key)]">Шаг 1 · Живой контекст</p>
+                    <h1 className="prototype-display mt-5 max-w-[18ch] text-balance text-[clamp(2.5rem,6vw,4.5rem)] leading-[1.02]">Расскажите о себе как человеку, а не анкете</h1>
+                    <p className="mt-5 max-w-[62ch] text-base leading-7 text-[var(--text-2)]">Чем занимаетесь, что уже умеете и что вам по-настоящему интересно. Конкретную тему обучения выберете после знакомства.</p>
 
-                    <div className="relative mt-8 overflow-hidden rounded-[1.65rem] border border-[var(--panel-border)] bg-[var(--glass)] p-1 shadow-[0_28px_90px_-62px_var(--accent)] backdrop-blur-xl sm:mt-10">
+                    <div className="mt-9 border-y border-[var(--panel-border)] py-1">
                       <textarea
                         autoFocus
                         value={narrative}
@@ -312,99 +281,62 @@ export function LearnerOnboarding({ onComplete }: Props) {
                         rows={7}
                         aria-label="Рассказ о себе"
                         placeholder="Например: я руковожу небольшой командой, часто работаю с исследованиями и данными. В свободное время бегаю и интересуюсь городской архитектурой..."
-                        className="prototype-input min-h-[13rem] w-full resize-none rounded-[1.4rem] bg-[var(--pill)] px-5 py-5 text-base leading-relaxed text-[var(--text)] outline-none transition focus:bg-[var(--glass)] sm:px-6 sm:py-6 sm:text-lg"
+                        className="prototype-input min-h-[13rem] w-full resize-none bg-[var(--panel)] px-4 py-5 text-base leading-7 text-[var(--text)] outline-none focus:ring-2 focus:ring-[var(--accent)] sm:px-5"
                       />
-                      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-5">
-                        <div className="flex flex-wrap gap-2 text-xs text-[var(--text-3)]">
-                          <span>занятие</span><span aria-hidden>·</span><span>опыт</span><span aria-hidden>·</span><span>интересы</span>
-                        </div>
-                        <span className={`text-xs ${narrative.length > 760 ? "text-[var(--warning)]" : "text-[var(--text-3)]"}`}>{narrative.length}/800</span>
+                      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 text-sm text-[var(--text-3)] sm:px-5">
+                        <span>занятие · опыт · интересы</span>
+                        <span className={narrative.length > 760 ? "text-[#8D3028]" : undefined}>{narrative.length}/800</span>
                       </div>
                     </div>
 
                     {isAnalyzing ? (
-                      <div className="mt-5 rounded-2xl border border-[var(--accent-tint-2)] bg-[var(--accent-tint)] p-4" role="status">
-                        <div className="flex items-center gap-3">
-                          <span className="relative grid size-9 place-items-center rounded-xl bg-[var(--accent)] text-white">
-                            <BrainCircuit aria-hidden className="size-4 prototype-pulse" />
-                          </span>
-                          <div>
-                            <p className="text-sm font-semibold">AI собирает ваш контекст</p>
-                            <p className="mt-1 text-xs text-[var(--text-2)]">Отделяет факты от догадок и готовит один точный вопрос…</p>
-                          </div>
-                        </div>
+                      <div className="mt-5 border-l-2 border-[var(--accent)] py-2 pl-4" role="status">
+                        <p className="flex items-center gap-2 text-base font-semibold"><BrainCircuit aria-hidden className="size-4 text-[var(--accent-key)]" /> AI собирает ваш контекст</p>
+                        <p className="mt-1 text-sm leading-6 text-[var(--text-2)]">Отделяет факты от догадок и готовит один точный вопрос.</p>
                       </div>
                     ) : null}
-                    {error ? <p className="mt-4 rounded-xl border border-red-500/25 bg-red-500/10 px-4 py-3 text-sm text-red-400" role="alert">{error}</p> : null}
-                    {narrative.length > 0 && narrative.trim().length < 30 ? <p className="mt-3 text-xs text-[var(--text-3)]">Добавьте ещё немного контекста — минимум 30 символов.</p> : null}
-                    <p className="mt-4 flex max-w-2xl items-start gap-2 text-xs leading-relaxed text-[var(--text-3)]"><ShieldCheck aria-hidden className="mt-0.5 size-3.5 shrink-0" />Текст один раз обрабатывается бесплатной моделью OpenRouter, чтобы собрать слепок. Приложение не сохраняет его на сервере.</p>
+                    {error ? <p className="mt-5 border-l-2 border-[#8D3028] py-2 pl-4 text-sm leading-6 text-[#8D3028]" role="alert">{error}</p> : null}
+                    {narrative.length > 0 && narrative.trim().length < 30 ? <p className="mt-3 text-sm text-[var(--text-3)]">Добавьте ещё немного контекста — минимум 30 символов.</p> : null}
+                    <p className="mt-5 flex max-w-[62ch] items-start gap-2 text-sm leading-6 text-[var(--text-3)]"><ShieldCheck aria-hidden className="mt-0.5 size-4 shrink-0" />Текст один раз обрабатывается бесплатной моделью OpenRouter, чтобы собрать слепок. Приложение не сохраняет его на сервере.</p>
                   </>
                 ) : null}
 
                 {stage === 1 && analysis ? (
                   <>
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--accent-key)]">Шаг 2 · Адаптивное уточнение</p>
-                    <div className="mt-5 flex items-start gap-3 sm:gap-4">
-                      <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-[var(--accent-grad)] text-white"><Sparkles aria-hidden className="size-5" /></span>
-                      <div className="min-w-0 rounded-e-[1.5rem] rounded-bl-[1.5rem] border border-[var(--accent-tint-2)] bg-[var(--accent-tint)] p-5 sm:p-7">
-                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--accent-key)]">Что я понял</p>
-                        <p className="mt-3 text-base font-medium leading-relaxed sm:text-xl">{analysis.summary}</p>
-                      </div>
+                    <p className="text-sm font-semibold text-[var(--accent-key)]">Шаг 2 · Адаптивное уточнение</p>
+                    <div className="mt-6 border-l-2 border-[var(--accent)] pl-5">
+                      <p className="text-sm font-semibold text-[var(--text-2)]">Что я понял</p>
+                      <p className="prototype-display mt-3 text-xl leading-8 text-[var(--text)] sm:text-2xl">{analysis.summary}</p>
                     </div>
-
-                    <div className="mt-9">
-                      <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-3)]"><MessageCircleMore aria-hidden className="size-4" /> Один вопрос для точности</p>
-                      <h1 className="mt-3 max-w-3xl text-balance text-[clamp(1.8rem,4vw,3rem)] font-semibold leading-[1.08] tracking-[-0.035em]">{analysis.followUpQuestion}</h1>
+                    <div className="mt-10">
+                      <p className="flex items-center gap-2 text-sm font-semibold text-[var(--text-2)]"><MessageCircleMore aria-hidden className="size-4 text-[var(--accent-key)]" /> Один вопрос для точности</p>
+                      <h1 className="prototype-display mt-4 max-w-[22ch] text-balance text-[clamp(2.25rem,5vw,3.5rem)] leading-[1.06]">{analysis.followUpQuestion}</h1>
                     </div>
-
-                    <div className="mt-7 grid gap-3 sm:grid-cols-3" role="radiogroup" aria-label={analysis.followUpQuestion}>
-                      {analysis.followUpOptions.map((option) => (
-                        <ChoiceCard
-                          key={option.id}
-                          active={selectedFollowUp === option.id && !customFollowUp}
-                          label={option.label}
-                          description={option.description}
-                          onClick={() => {
-                            setSelectedFollowUp(option.id);
-                            setCustomFollowUp("");
-                          }}
-                        />
-                      ))}
+                    <div className="mt-7 grid gap-x-5 md:grid-cols-3" role="radiogroup" aria-label={analysis.followUpQuestion}>
+                      {analysis.followUpOptions.map((option) => <ChoiceRow key={option.id} active={selectedFollowUp === option.id && !customFollowUp} label={option.label} description={option.description} onClick={() => { setSelectedFollowUp(option.id); setCustomFollowUp(""); }} />)}
                     </div>
-
-                    <label className="mt-5 block">
-                      <span className="text-xs font-medium text-[var(--text-2)]">Или ответьте своими словами</span>
-                      <input
-                        value={customFollowUp}
-                        onChange={(event) => {
-                          setCustomFollowUp(event.target.value);
-                          if (event.target.value) setSelectedFollowUp("");
-                        }}
-                        maxLength={240}
-                        placeholder="Короткий ответ"
-                        className="prototype-input mt-2 min-h-12 w-full rounded-xl border border-[var(--panel-border)] bg-[var(--pill)] px-4 py-3 text-sm outline-none transition focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-tint-2)]"
-                      />
+                    <label className="mt-7 block">
+                      <span className="text-sm font-medium text-[var(--text-2)]">Или ответьте своими словами</span>
+                      <input value={customFollowUp} onChange={(event) => { setCustomFollowUp(event.target.value); if (event.target.value) setSelectedFollowUp(""); }} maxLength={240} placeholder="Короткий ответ" className="prototype-input mt-2 min-h-11 w-full border border-[var(--panel-border)] bg-[var(--panel)] px-4 py-3 text-base text-[var(--text)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]" />
                     </label>
                   </>
                 ) : null}
 
                 {stage === 2 ? (
                   <>
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--accent-key)]">Шаг 3 · Учебный контракт</p>
-                    <h1 className="mt-4 max-w-[19ch] text-balance text-[clamp(2.1rem,5vw,3.8rem)] font-semibold leading-[1.04] tracking-[-0.04em]">Что должно измениться после обучения?</h1>
-                    <p className="mt-4 max-w-2xl text-sm leading-relaxed text-[var(--text-2)] sm:text-base">Это определит не тему, а глубину маршрута, характер практики и критерий готовности.</p>
-
-                    <fieldset className="mt-8">
-                      <legend className="mb-3 text-sm font-semibold">Ваш критерий результата</legend>
-                      <div className="grid gap-3 sm:grid-cols-2" role="radiogroup">
-                        {outcomeOptions.map((option) => <ChoiceCard key={option.value} active={successCriterion === option.value} label={option.label} description={option.description} onClick={() => setSuccessCriterion(option.value)} />)}
+                    <p className="text-sm font-semibold text-[var(--accent-key)]">Шаг 3 · Учебный контракт</p>
+                    <h1 className="prototype-display mt-5 max-w-[20ch] text-balance text-[clamp(2.5rem,5vw,4rem)] leading-[1.04]">Что должно измениться после обучения?</h1>
+                    <p className="mt-5 max-w-[62ch] text-base leading-7 text-[var(--text-2)]">Это определит не тему, а глубину маршрута, характер практики и критерий готовности.</p>
+                    <fieldset className="mt-9">
+                      <legend className="text-base font-semibold">Ваш критерий результата</legend>
+                      <div className="mt-3 grid gap-x-5 md:grid-cols-2" role="radiogroup">
+                        {outcomeOptions.map((option) => <ChoiceRow key={option.value} active={successCriterion === option.value} label={option.label} description={option.description} onClick={() => setSuccessCriterion(option.value)} />)}
                       </div>
                     </fieldset>
-
                     <fieldset className="mt-9 border-t border-[var(--panel-border)] pt-7">
-                      <legend className="mb-3 flex items-center gap-2 text-sm font-semibold"><Clock3 aria-hidden className="size-4 text-[var(--accent-key)]" /> Сколько времени реально есть на одно занятие?</legend>
-                      <div className="grid gap-3 sm:grid-cols-3" role="radiogroup">
-                        {timeOptions.map((option) => <ChoiceCard key={option.value} active={dailyTime === option.value} label={option.label} description={option.description} onClick={() => setDailyTime(option.value)} />)}
+                      <legend className="flex items-center gap-2 text-base font-semibold"><Clock3 aria-hidden className="size-4 text-[var(--accent-key)]" /> Сколько времени реально есть на одно занятие?</legend>
+                      <div className="mt-3 grid gap-x-5 md:grid-cols-3" role="radiogroup">
+                        {timeOptions.map((option) => <ChoiceRow key={option.value} active={dailyTime === option.value} label={option.label} description={option.description} onClick={() => setDailyTime(option.value)} />)}
                       </div>
                     </fieldset>
                   </>
@@ -412,21 +344,19 @@ export function LearnerOnboarding({ onComplete }: Props) {
 
                 {stage === 3 && analysis && successCriterion && dailyTime ? (
                   <>
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--accent-key)]">Шаг 4 · Проверка</p>
-                    <h1 className="mt-4 max-w-[18ch] text-balance text-[clamp(2.2rem,5vw,4rem)] font-semibold leading-[1.03] tracking-[-0.045em]">Вот что AI понял о вас</h1>
-                    <p className="mt-4 max-w-2xl text-sm leading-relaxed text-[var(--text-2)] sm:text-base">Этот слепок будет добавляться к запросу после выбора темы. Уберите любую деталь, которую не хотите использовать.</p>
-
-                    <div className={`mt-8 overflow-hidden rounded-[1.6rem] border border-[var(--accent-tint-2)] bg-[var(--accent-tint)] p-5 transition sm:p-7 ${enabledSignals.has("profileSummary") ? "" : "opacity-45"}`}>
+                    <p className="text-sm font-semibold text-[var(--accent-key)]">Шаг 4 · Проверка</p>
+                    <h1 className="prototype-display mt-5 max-w-[18ch] text-balance text-[clamp(2.5rem,5vw,4rem)] leading-[1.04]">Вот что AI понял о вас</h1>
+                    <p className="mt-5 max-w-[62ch] text-base leading-7 text-[var(--text-2)]">Этот слепок будет добавляться к запросу после выбора темы. Уберите любую деталь, которую не хотите использовать.</p>
+                    <section className={`mt-9 border-y border-[var(--panel-border)] py-5 ${enabledSignals.has("profileSummary") ? "" : "text-[var(--text-3)]"}`}>
                       <div className="flex items-start justify-between gap-4">
-                        <p className={`max-w-3xl text-balance text-lg font-medium leading-relaxed sm:text-2xl ${enabledSignals.has("profileSummary") ? "" : "line-through"}`}>{analysis.summary}</p>
+                        <p className={`prototype-display max-w-[52ch] text-xl leading-8 sm:text-2xl ${enabledSignals.has("profileSummary") ? "" : "line-through"}`}>{analysis.summary}</p>
                         <div className="flex shrink-0 gap-2">
-                          <button type="button" onClick={() => toggleSignal("profileSummary")} aria-label={enabledSignals.has("profileSummary") ? "Не использовать краткий слепок" : "Вернуть краткий слепок"} className="grid size-10 place-items-center rounded-xl bg-[var(--pill)] text-[var(--text-2)] transition hover:text-[var(--text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]">{enabledSignals.has("profileSummary") ? <X aria-hidden className="size-4" /> : <Check aria-hidden className="size-4" />}</button>
-                          <button type="button" onClick={() => moveTo(0)} aria-label="Изменить рассказ" className="grid size-10 place-items-center rounded-xl bg-[var(--pill)] text-[var(--text-2)] transition hover:text-[var(--text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"><Pencil aria-hidden className="size-4" /></button>
+                          <button type="button" onClick={() => toggleSignal("profileSummary")} aria-label={enabledSignals.has("profileSummary") ? "Не использовать краткий слепок" : "Вернуть краткий слепок"} className="grid min-h-11 min-w-11 place-items-center rounded-lg border border-[var(--panel-border)] bg-[var(--panel)] text-[var(--text-2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]">{enabledSignals.has("profileSummary") ? <X aria-hidden className="size-4" /> : <Check aria-hidden className="size-4" />}</button>
+                          <button type="button" onClick={() => moveTo(0)} aria-label="Изменить рассказ" className="grid min-h-11 min-w-11 place-items-center rounded-lg border border-[var(--panel-border)] bg-[var(--panel)] text-[var(--text-2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"><Pencil aria-hidden className="size-4" /></button>
                         </div>
                       </div>
-                    </div>
-
-                    <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                    </section>
+                    <dl className="mt-5 grid md:grid-cols-2 md:gap-x-8">
                       {[
                         ...extractedFacts,
                         { signal: "followUpAnswer" as const, label: "Важный контекст", value: followUpAnswer },
@@ -434,31 +364,22 @@ export function LearnerOnboarding({ onComplete }: Props) {
                         { signal: "dailyTime" as const, label: "Ритм", value: `${dailyTime} минут на занятие` },
                       ].map((fact) => {
                         const included = enabledSignals.has(fact.signal);
-                        return (
-                          <div key={fact.signal} className={`flex min-h-20 items-start gap-3 rounded-2xl border p-4 transition ${included ? "border-[var(--panel-border)] bg-[var(--pill)]" : "border-[var(--panel-border)] opacity-45"}`}>
-                            <div className="min-w-0 flex-1"><p className="text-[0.67rem] uppercase tracking-[0.13em] text-[var(--text-3)]">{fact.label}</p><p className={`mt-1 text-sm leading-relaxed ${included ? "text-[var(--text-2)]" : "line-through text-[var(--text-3)]"}`}>{fact.value}</p></div>
-                            <button type="button" onClick={() => toggleSignal(fact.signal)} aria-label={included ? `Не использовать: ${signalLabels[fact.signal]}` : `Вернуть: ${signalLabels[fact.signal]}`} className={`shrink-0 rounded-lg text-[var(--text-3)] transition hover:bg-[var(--accent-tint)] hover:text-[var(--text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${included ? "grid size-8 place-items-center" : "px-2 py-1 text-xs font-medium"}`}>{included ? <X aria-hidden className="size-3.5" /> : "Вернуть"}</button>
-                          </div>
-                        );
+                        return <div key={fact.signal} className="flex items-start justify-between gap-3 border-t border-[var(--panel-border)] py-4"><div><dt className="text-sm font-medium text-[var(--text-3)]">{fact.label}</dt><dd className={`mt-1 text-base leading-6 ${included ? "text-[var(--text-2)]" : "text-[var(--text-3)] line-through"}`}>{fact.value}</dd></div><button type="button" onClick={() => toggleSignal(fact.signal)} aria-label={included ? `Не использовать: ${signalLabels[fact.signal]}` : `Вернуть: ${signalLabels[fact.signal]}`} className="min-h-11 shrink-0 rounded-lg px-3 text-sm font-semibold text-[var(--accent-key)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]">{included ? "Убрать" : "Вернуть"}</button></div>;
                       })}
-                    </div>
-
-                    <div className="mt-8 flex items-start justify-between gap-4 rounded-[1.4rem] border border-[var(--panel-border)] bg-[var(--glass)] p-5 sm:p-6">
-                      <div className="flex min-w-0 items-start gap-3">
-                        <span className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--accent-tint)] text-[var(--accent-key)]"><ShieldCheck aria-hidden className="size-4" /></span>
-                        <div><p className="text-sm font-semibold">Использовать слепок для персонализации</p><p className="mt-1 text-xs leading-relaxed text-[var(--text-3)] sm:text-sm">Сырой рассказ не отправляется при генерации курса. Слепок хранится только в этой вкладке.</p></div>
-                      </div>
-                      <button type="button" role="switch" aria-checked={usePersonalization} onClick={() => setUsePersonalization((value) => !value)} className={`relative mt-1 h-7 w-12 shrink-0 rounded-full border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${usePersonalization ? "border-[var(--accent)] bg-[var(--accent)]" : "border-[var(--node-rest-border)] bg-[var(--node-rest-bg)]"}`}><span className={`absolute left-1 top-1 size-[1.125rem] rounded-full bg-white shadow transition-transform ${usePersonalization ? "translate-x-5" : "translate-x-0"}`} /></button>
-                    </div>
+                    </dl>
+                    <section className="mt-8 flex items-start justify-between gap-4 border-y border-[var(--panel-border)] py-5">
+                      <div className="flex min-w-0 items-start gap-3"><ShieldCheck aria-hidden className="mt-0.5 size-5 shrink-0 text-[var(--accent-key)]" /><div><p className="text-base font-semibold">Использовать слепок для персонализации</p><p className="mt-1 text-sm leading-6 text-[var(--text-3)]">Сырой рассказ не отправляется при генерации курса. Слепок хранится только в этой вкладке.</p></div></div>
+                      <button type="button" role="switch" aria-checked={usePersonalization} onClick={() => setUsePersonalization((value) => !value)} className={`relative mt-1 h-7 w-12 shrink-0 rounded-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${usePersonalization ? "border-[var(--accent)] bg-[var(--accent)]" : "border-[var(--panel-border)] bg-[var(--panel)]"}`}><span className={`absolute left-1 top-1 size-[1.125rem] rounded-full bg-white shadow transition-transform ${usePersonalization ? "translate-x-5" : "translate-x-0"}`} /></button>
+                    </section>
                   </>
                 ) : null}
               </div>
             </main>
 
-            <footer className="fixed inset-x-0 bottom-0 z-20 border-t border-[var(--panel-border)] bg-[color:var(--page)]/90 px-4 py-4 backdrop-blur-xl sm:px-8 lg:sticky lg:inset-x-auto lg:px-12 xl:px-20">
-              <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-3">
-                <button type="button" onClick={() => moveTo(Math.max(0, stage - 1) as Stage)} disabled={stage === 0 || isAnalyzing} className="inline-flex min-h-12 items-center gap-2 rounded-xl px-3 text-sm font-medium text-[var(--text-2)] transition hover:bg-[var(--pill)] hover:text-[var(--text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:pointer-events-none disabled:opacity-0"><ArrowLeft aria-hidden className="size-4" /> Назад</button>
-                <button type="submit" disabled={!canContinue} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[var(--accent-grad)] px-5 text-sm font-semibold text-white shadow-[0_14px_34px_-16px_var(--accent)] transition hover:-translate-y-0.5 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--page)] disabled:pointer-events-none disabled:opacity-40 sm:px-7">
+            <footer className="fixed inset-x-0 bottom-0 z-20 border-t border-[var(--panel-border)] bg-[var(--page)] px-4 py-3 lg:static lg:px-0">
+              <div className="flex w-full max-w-[65ch] items-center justify-between gap-3">
+                <button type="button" onClick={() => moveTo(Math.max(0, stage - 1) as Stage)} disabled={stage === 0 || isAnalyzing} className="inline-flex min-h-11 items-center gap-2 rounded-xl px-3 text-sm font-semibold text-[var(--text-2)] transition-colors hover:bg-[var(--accent-tint)] hover:text-[var(--text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:invisible"><ArrowLeft aria-hidden className="size-4" /> Назад</button>
+                <button type="submit" disabled={!canContinue} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-key)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--page)] disabled:bg-[#C8C2B8] disabled:text-[#60675F] disabled:opacity-100">
                   {stage === 0 ? (isAnalyzing ? "Собираю слепок…" : "Собрать мой слепок") : stage === 3 ? "Сохранить и выбрать тему" : "Продолжить"}
                   {stage === 3 ? <Check aria-hidden className="size-4" /> : <ArrowRight aria-hidden className="size-4" />}
                 </button>
